@@ -9,7 +9,7 @@ import { Tyto } from "../src/index.js";
 
 const tyto = new Tyto({ apiKey: process.env["TYTO_API_KEY"] });
 
-const nest = await tyto.nests.create({ name: "ws-demo", template: "ubuntu-24-dev" });
+const nest = await tyto.create({ name: "ws-demo", template: "ubuntu-24-dev" });
 console.log(`Nest ${nest.id} is ${nest.status}`);
 
 // --- Raw exec WebSocket ---
@@ -30,7 +30,7 @@ await new Promise<void>((resolve, reject) => {
 
 // --- Managed session attach WebSocket ---
 console.log("Creating managed session…");
-const session = await nest.sessions.create({
+const session = await nest.createSession({
   tty: true,
   argv: ["bash", "-lc", "for i in 1 2 3; do echo $i; sleep 0.2; done"],
   cols: 80,

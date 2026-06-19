@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const tyto = new Tyto({ apiKey: process.env["TYTO_API_KEY"] });
 
-const nest = await tyto.nests.create({ name: "preview-demo", template: "ubuntu-24-dev" });
+const nest = await tyto.create({ name: "preview-demo"});
 console.log(`Nest ${nest.id} is ${nest.status}`);
 
 // Upload the HTML page to the nest
@@ -18,7 +18,7 @@ await nest.fs.write("index.html", html, "file");
 console.log("Uploaded index.html");
 
 // Start a Python HTTP server on port 3000 serving /home/tyto
-await nest.sessions.create({
+await nest.createSession({
   tty: true,
   argv: ["python3", "-m", "http.server", "3000"],
   cwd: "/home/tyto",
@@ -31,7 +31,7 @@ console.log("Web server started on port 3000");
 await new Promise((r) => setTimeout(r, 1500));
 
 // Create a public preview (no auth token needed to open in browser)
-const preview = await nest.previews.create({
+const preview = await nest.createPreview({
   port: 3000,
   auth: "public",
   name: "my-app",

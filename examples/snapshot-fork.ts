@@ -5,12 +5,12 @@ import { Tyto } from "../src/index.js";
 
 const tyto = new Tyto({ apiKey: process.env["TYTO_API_KEY"] });
 
-const nest = await tyto.nests.create({ name: "snapshot-demo", template: "ubuntu-24-dev" });
+const nest = await tyto.create({ name: "snapshot-demo"});
 console.log(`Nest ${nest.id} is ${nest.status}`);
 
 // Create a snapshot
 console.log("Creating snapshot…");
-const snap = await nest.snapshots.create({
+const snap = await nest.createSnapshot({
   name: "my-snapshot",
   description: "Before refactoring",
   stop_if_running: false,
@@ -37,13 +37,13 @@ console.log(`Forked → ${fork.id} (${fork.status})`);
 
 // Delete the snapshot (dry run first)
 if (snap.id) {
-  const dryRun = await tyto.snapshots.delete(snap.id, { dry_run: true });
+  const dryRun = await nest.deleteSnapshot(snap.id, { dry_run: true });
   console.log(
     `Would free ${dryRun.would_free_bytes ?? 0} bytes, can_delete=${dryRun.can_delete}`,
   );
 
   if (dryRun.can_delete) {
-    const result = await tyto.snapshots.delete(snap.id);
+    const result = await nest.deleteSnapshot(snap.id);
     console.log(`Deleted: ${result.deleted}`);
   }
 }

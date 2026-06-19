@@ -6,18 +6,25 @@ import type { ResolvedConfig } from "../config.js";
 import { packDir, unpackDir } from "../tar.js";
 import { connectWs } from "../ws.js";
 import { FileSystem } from "./files.js";
-import { SessionsResource } from "./sessions.js";
+import { type Session, SessionsResource } from "./sessions.js";
 import { HoldsResource } from "./holds.js";
 import { PreviewsResource } from "./previews.js";
 import { SnapshotsResource } from "./snapshots.js";
 import type {
   CreateNestOptions,
+  CreatePreviewOptions,
+  CreateSessionOptions,
+  CreateSnapshotOptions,
+  DeleteSnapshotOptions,
+  DeleteSnapshotResponse,
   ForkOptions,
   ForkResponse,
   NestData,
   NestLifecycle,
   NestStatus,
+  PreviewData,
   RestoreResponse,
+  SnapshotData,
   WakeOptions,
   WakeResponse,
 } from "../types.js";
@@ -149,6 +156,28 @@ export class Nest {
     });
   }
 
+  async createSnapshot(opts?: CreateSnapshotOptions): Promise<SnapshotData> {
+    return this.snapshots.create(opts);
+  }
+
+  async deleteSnapshot(
+    snapshotId: string,
+    opts?: DeleteSnapshotOptions,
+  ): Promise<DeleteSnapshotResponse> {
+    return this.http.delete<DeleteSnapshotResponse>(
+      `/snapshots/${snapshotId}`,
+      opts as Record<string, string | number | boolean | undefined>,
+    );
+  }
+
+  async createSession(opts: CreateSessionOptions): Promise<Session> {
+    return this.sessions.create(opts);
+  }
+
+  async createPreview(opts: CreatePreviewOptions): Promise<PreviewData> {
+    return this.previews.create(opts);
+  }
+
   async put(localPath: string, remotePath: string): Promise<void> {
     const info = await stat(localPath);
     if (info.isDirectory()) {
@@ -200,10 +229,4 @@ export class NestsResource {
     return new Nest(data, this.http, this.config);
   }
 
-  async getByName(name: string): Promise<Nest> {
-    const nests = await this.list();
-    const found = nests.find((n) => n.name === name);
-    if (!found) throw new Error(`No nest found with name "${name}"`);
-    return found;
-  }
 }

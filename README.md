@@ -34,22 +34,14 @@ const me = await tyto.me();
 console.log(me.email);
 
 // Create a nest
-const nest = await tyto.nests.create({ name: "my-nest", template: "ubuntu-24-dev" });
+const nest = await tyto.create({ name: "my-nest", template: "ubuntu-24-dev" });
 
-// Upload a file
-await nest.fs.write("/home/tyto/hello.txt", Buffer.from("Hello!"), "file");
+// Upload / download a file or directory
+await nest.put("./hello.txt", "hello.txt");
+await nest.get("hello.txt", "./hello.downloaded.txt");
 
-// Read it back
-const { data, kind } = await nest.fs.read("/home/tyto/hello.txt");
-console.log(data.toString()); // "Hello!"
-
-// Run a command via a managed session
-const session = await nest.sessions.create({
-  tty: false,
-  argv: ["bash", "-lc", "echo hi"],
-});
-
-// Attach to the session over WebSocket
+// Create a session and attach over WebSocket
+const session = await nest.createSession({ tty: false, argv: ["bash", "-lc", "echo hi"] });
 const ws = session.attach();
 ws.on("message", (d) => console.log(String(d)));
 
@@ -58,12 +50,13 @@ const console_ = nest.console();
 const exec_ = nest.exec();
 
 // Create a preview
-const preview = await nest.previews.create({ port: 3000, auth: "private" });
+const preview = await nest.createPreview({ port: 3000, auth: "private" });
 console.log(preview.url);
 
 // Snapshot, fork, restore
-const snap = await nest.snapshots.create({ name: "v1" });
+const snap = await nest.createSnapshot({ name: "v1" });
 const fork = await nest.fork({ name: "my-fork" });
+await nest.deleteSnapshot(snap.id!);
 // await nest.restore(snap.id!);
 
 // Keepalive hold
@@ -82,11 +75,17 @@ await nest.delete();
 
 | Resource | Description |
 |---|---|
+| `tyto.create()` | Create a nest |
 | `tyto.nests` | Create / list / get nests |
 | `tyto.previews` | Inspect / revoke previews by ID |
-| `tyto.snapshots` | Delete snapshots by ID |
 | `tyto.auth` | CLI browser auth flow |
-| `nest.fs` | Upload / download files |
+| `nest.put(local, remote)` | Upload a file or directory |
+| `nest.get(remote, local)` | Download a file or directory |
+| `nest.createSession()` | Create a managed session |
+| `nest.createPreview()` | Create a preview URL |
+| `nest.createSnapshot()` | Create a snapshot |
+| `nest.deleteSnapshot()` | Delete a snapshot |
+| `nest.fs` | Low-level file upload / download |
 | `nest.sessions` | Managed sessions (create / list) |
 | `nest.previews` | Previews scoped to the nest |
 | `nest.snapshots` | Snapshots + fork/restore |

@@ -8,16 +8,6 @@ import {
 import { TopLevelSnapshotsResource } from "./resources/snapshots.js";
 import type { CreateNestOptions, User } from "./types.js";
 
-function parseRemote(remote: string): { nestName: string; remotePath: string } {
-  const colon = remote.indexOf(":");
-  if (colon < 0) {
-    throw new Error(
-      `Invalid remote path "${remote}": expected "nestName:path"`,
-    );
-  }
-  return { nestName: remote.slice(0, colon), remotePath: remote.slice(colon + 1) };
-}
-
 export class Tyto {
   readonly auth: AuthResource;
   readonly nests: NestsResource;
@@ -37,18 +27,6 @@ export class Tyto {
 
   async create(opts: CreateNestOptions): Promise<Nest> {
     return this.nests.create(opts);
-  }
-
-  async put(localPath: string, remote: string): Promise<void> {
-    const { nestName, remotePath } = parseRemote(remote);
-    const nest = await this.nests.getByName(nestName);
-    await nest.put(localPath, remotePath);
-  }
-
-  async get(remote: string, localPath: string): Promise<void> {
-    const { nestName, remotePath } = parseRemote(remote);
-    const nest = await this.nests.getByName(nestName);
-    await nest.get(remotePath, localPath);
   }
 
   async health(): Promise<{ ok: boolean }> {

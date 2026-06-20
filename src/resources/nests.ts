@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { readFile, stat, writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { WebSocket } from "ws";
@@ -28,6 +29,14 @@ import type {
   WakeOptions,
   WakeResponse,
 } from "../types.js";
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Single-quote a string for safe interpolation into a bash command. */
+function shquote(s: string): string {
+  return "'" + s.replace(/'/g, "'\\''") + "'";
+}
 
 export class Nest {
   readonly fs: FileSystem;
@@ -134,26 +143,60 @@ export class Nest {
     return this.http.post<ForkResponse>(`/nest/${this._data.id}/fork`, opts);
   }
 
+  /**
+   * Run a command in the nest and return its captured output.
+   *
+   * The API runs managed sessions to completion server-side and only exposes
+   * live output over a WebSocket, which is racy for short commands (the session
+   * can finish before the stream attaches, yielding HTTP 410). So we redirect
+   * the command's stdout+stderr and exit code to files, poll the filesystem
+   * until the exit-code file appears, then read the output back over the
+   * (reliable) filesystem API. No WebSocket required.
+   */
   async run(
     argv: string[],
-    opts?: { cwd?: string; cols?: number; rows?: number },
+    opts?: { cwd?: string; cols?: number; rows?: number; timeoutMs?: number },
   ): Promise<string> {
-    const session = await this.sessions.create({
+    const workDir = "/home/tyto/.tyto-run";
+    const runId = randomBytes(8).toString("hex");
+    const outAbs = `${workDir}/${runId}.out`;
+    const rcAbs = `${workDir}/${runId}.rc`;
+    const outRel = `.tyto-run/${runId}.out`;
+    const rcRel = `.tyto-run/${runId}.rc`;
+
+    const cwd = opts?.cwd ?? "/home/tyto";
+    const inner = argv.map(shquote).join(" ");
+    const script =
+      `mkdir -p ${shquote(workDir)}; ` +
+      `{ cd ${shquote(cwd)} && ${inner} ; } > ${shquote(outAbs)} 2>&1; ` +
+      `echo $? > ${shquote(rcAbs)}`;
+
+    await this.sessions.create({
       tty: true,
-      argv,
+      argv: ["bash", "-lc", script],
       cwd: opts?.cwd,
       cols: opts?.cols ?? 80,
       rows: opts?.rows ?? 24,
     });
-    return new Promise((resolve, reject) => {
-      const ws = session.attach();
-      const chunks: Buffer[] = [];
-      ws.on("message", (data) => {
-        chunks.push(Buffer.isBuffer(data) ? data : Buffer.from(String(data)));
-      });
-      ws.on("close", () => resolve(Buffer.concat(chunks).toString()));
-      ws.on("error", reject);
-    });
+
+    // The exit-code file is written only after the command completes, so its
+    // presence is an unambiguous "done" signal. (Session status is unreliable
+    // here: a quiet tty session reports "idle" while still running.)
+    const deadline = Date.now() + (opts?.timeoutMs ?? 120_000);
+    while (Date.now() < deadline) {
+      await sleep(500);
+      try {
+        if ((await this.fs.read(rcRel)).data.toString("utf8").trim()) break;
+      } catch {
+        // exit-code file not written yet
+      }
+    }
+
+    try {
+      return (await this.fs.read(outRel)).data.toString("utf8");
+    } catch {
+      return "";
+    }
   }
 
   async createSnapshot(opts?: CreateSnapshotOptions): Promise<SnapshotData> {

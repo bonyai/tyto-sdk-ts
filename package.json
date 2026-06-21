@@ -1,5 +1,5 @@
 {
-  "name": "@bonya/tyto",
+  "name": "@bonya-ai/tyto",
   "version": "0.11.0",
   "description": "Official TypeScript SDK for the Tyto API",
   "author": "Bonya",

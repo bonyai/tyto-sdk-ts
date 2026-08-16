@@ -1,35 +1,38 @@
 {
   "name": "@bonya-ai/tyto",
-  "version": "0.11.0",
-  "description": "Official TypeScript SDK for the Tyto API",
-  "author": "Bonya",
-  "license": "MIT",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for the Tyto API (Bonya Compute)",
   "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "tsup",
-    "typecheck": "tsc --noEmit",
-    "dev": "tsup --watch"
+    "proto": "bash scripts/gen-proto.sh",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.check.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm run test"
   },
   "dependencies": {
-    "ws": "^8.18.0"
+    "@grpc/grpc-js": "^1.14.4"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@types/ws": "^8.5.13",
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.3"
+    "ts-proto": "^2.12.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.9"
   }
 }

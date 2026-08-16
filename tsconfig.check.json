@@ -1,0 +1,19 @@
+{
+  // Typecheck-only config covering everything the published build excludes:
+  // tests and examples. The main tsconfig.json sets rootDir to src/ so the
+  // emitted dist/ layout stays flat, which means these files cannot join that
+  // compilation -- but they still need checking, or an example silently rots
+  // the first time a signature changes.
+  //
+  // noEmit, so this never produces output; `npm run typecheck` runs it.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "rootDir": "."
+  },
+  "include": ["src", "tests", "examples"],
+  "exclude": ["dist", "node_modules"]
+}

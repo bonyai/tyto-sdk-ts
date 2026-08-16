@@ -1,29 +1,51 @@
 /**
- * Demonstrates file upload/download, including reading directory archives (tar).
+ * Read and write files inside a sandbox.
+ *
+ *   export BONYA_API_KEY=byk_...
+ *   npx tsx examples/files.ts
  */
-import { Tyto } from "../src/index.js";
+import { Tyto, FileKind } from "../src/index.js";
 
-const tyto = new Tyto({ apiKey: process.env["TYTO_API_KEY"] });
+async function main(): Promise<void> {
+  const apiKey = process.env["BONYA_API_KEY"];
+  const client = new Tyto({ apiKey });
 
-const nest = await tyto.create({ name: "files-demo", template: "ubuntu-24-dev" });
-console.log(`Nest ${nest.id} is ${nest.status}`);
+  try {
+    const sandbox = await client.createSandbox({ template: "ubuntu-24.04" });
 
-// Upload a file
-await nest.put("./demo.txt", "demo.txt");
-console.log("Uploaded file");
+    try {
+      const files = sandbox.files;
 
-// Download the file
-await nest.get("demo.txt", "./demo.downloaded.txt");
-console.log("Downloaded file");
+      await files.write("/workspace/greeting.txt", "hello\n");
+      const data = await files.read("/workspace/greeting.txt");
+      process.stdout.write(new TextDecoder().decode(data));
 
-// Upload a directory
-await nest.put("./mydir", "mydir");
-console.log("Uploaded directory");
+      await files.mkdir("/workspace/output");
+      await files.move("/workspace/greeting.txt", "/workspace/output/greeting.txt");
 
-// Download a directory
-await nest.get("mydir", "./mydir-downloaded");
-console.log("Downloaded directory");
+      for (const entry of await files.list("/workspace/output")) {
+        const kind = entry.kind === FileKind.DIRECTORY ? "dir " : "file";
+        console.log(`${kind} ${entry.name} (${entry.size} bytes)`);
+      }
 
-await nest.stop();
-await nest.delete();
-console.log("Done");
+      const info = await files.stat("/workspace/output/greeting.txt");
+      console.log(`mode ${(info.mode & 0o7777).toString(8).padStart(4, "0")}, modified ${info.modifiedAt}`);
+
+      // upload and download stream in chunks, so file size is bounded by disk
+      // rather than memory. read buffers, capped by filesystemReadLimit.
+      await files.upload("package.json", "/workspace/output/package.json");
+      await files.download("/workspace/output/package.json", "/tmp/roundtrip.json");
+
+      await files.remove("/workspace/output", true);
+    } finally {
+      await sandbox.delete();
+    }
+  } finally {
+    client.close();
+  }
+}
+
+main().catch((error: unknown) => {
+  console.error(error);
+  process.exitCode = 1;
+});

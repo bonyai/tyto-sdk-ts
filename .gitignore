@@ -1,4 +1,5 @@
 node_modules/
 dist/
-*.js.map
-.env
+.proto-export/
+*.log
+.DS_Store

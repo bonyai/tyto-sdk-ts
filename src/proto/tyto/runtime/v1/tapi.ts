@@ -18,8 +18,8 @@ import {
   type ServiceError,
   type UntypedServiceImplementation,
 } from "@grpc/grpc-js";
+import { NetworkPolicy, TemplateBinding } from "./common.js";
 import { Fence } from "./guest.js";
-import { NetworkPolicy, TemplateBinding } from "./host.js";
 import { PreviewAuthMode, previewAuthModeFromJSON, previewAuthModeToJSON, PreviewRecord } from "./preview.js";
 
 export const protobufPackage = "tyto.runtime.v1";
@@ -131,6 +131,439 @@ export function terminalStateToJSON(object: TerminalState): string {
   }
 }
 
+export enum TApiDegradation {
+  TAPI_DEGRADATION_UNSPECIFIED = 0,
+  TAPI_DEGRADATION_BALANCE = 1,
+  TAPI_DEGRADATION_PRICES = 2,
+  TAPI_DEGRADATION_LIMITS = 3,
+  TAPI_DEGRADATION_OFFERS = 4,
+}
+
+export function tApiDegradationFromJSON(object: any): TApiDegradation {
+  switch (object) {
+    case 0:
+    case "TAPI_DEGRADATION_UNSPECIFIED":
+      return TApiDegradation.TAPI_DEGRADATION_UNSPECIFIED;
+    case 1:
+    case "TAPI_DEGRADATION_BALANCE":
+      return TApiDegradation.TAPI_DEGRADATION_BALANCE;
+    case 2:
+    case "TAPI_DEGRADATION_PRICES":
+      return TApiDegradation.TAPI_DEGRADATION_PRICES;
+    case 3:
+    case "TAPI_DEGRADATION_LIMITS":
+      return TApiDegradation.TAPI_DEGRADATION_LIMITS;
+    case 4:
+    case "TAPI_DEGRADATION_OFFERS":
+      return TApiDegradation.TAPI_DEGRADATION_OFFERS;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiDegradation");
+  }
+}
+
+export function tApiDegradationToJSON(object: TApiDegradation): string {
+  switch (object) {
+    case TApiDegradation.TAPI_DEGRADATION_UNSPECIFIED:
+      return "TAPI_DEGRADATION_UNSPECIFIED";
+    case TApiDegradation.TAPI_DEGRADATION_BALANCE:
+      return "TAPI_DEGRADATION_BALANCE";
+    case TApiDegradation.TAPI_DEGRADATION_PRICES:
+      return "TAPI_DEGRADATION_PRICES";
+    case TApiDegradation.TAPI_DEGRADATION_LIMITS:
+      return "TAPI_DEGRADATION_LIMITS";
+    case TApiDegradation.TAPI_DEGRADATION_OFFERS:
+      return "TAPI_DEGRADATION_OFFERS";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiDegradation");
+  }
+}
+
+export enum TApiTopUpReason {
+  TAPI_TOP_UP_REASON_UNSPECIFIED = 0,
+  TAPI_TOP_UP_REASON_NOT_PROVISIONED = 1,
+  TAPI_TOP_UP_REASON_PURCHASE_PENDING = 2,
+  TAPI_TOP_UP_REASON_NO_OFFERS = 3,
+  /**
+   * TAPI_TOP_UP_REASON_UNKNOWN - TAPI_TOP_UP_REASON_UNKNOWN is returned only when the offer catalog
+   * itself could not be read, so a caller is never left guessing between
+   * allowed and no_offers.
+   */
+  TAPI_TOP_UP_REASON_UNKNOWN = 4,
+}
+
+export function tApiTopUpReasonFromJSON(object: any): TApiTopUpReason {
+  switch (object) {
+    case 0:
+    case "TAPI_TOP_UP_REASON_UNSPECIFIED":
+      return TApiTopUpReason.TAPI_TOP_UP_REASON_UNSPECIFIED;
+    case 1:
+    case "TAPI_TOP_UP_REASON_NOT_PROVISIONED":
+      return TApiTopUpReason.TAPI_TOP_UP_REASON_NOT_PROVISIONED;
+    case 2:
+    case "TAPI_TOP_UP_REASON_PURCHASE_PENDING":
+      return TApiTopUpReason.TAPI_TOP_UP_REASON_PURCHASE_PENDING;
+    case 3:
+    case "TAPI_TOP_UP_REASON_NO_OFFERS":
+      return TApiTopUpReason.TAPI_TOP_UP_REASON_NO_OFFERS;
+    case 4:
+    case "TAPI_TOP_UP_REASON_UNKNOWN":
+      return TApiTopUpReason.TAPI_TOP_UP_REASON_UNKNOWN;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiTopUpReason");
+  }
+}
+
+export function tApiTopUpReasonToJSON(object: TApiTopUpReason): string {
+  switch (object) {
+    case TApiTopUpReason.TAPI_TOP_UP_REASON_UNSPECIFIED:
+      return "TAPI_TOP_UP_REASON_UNSPECIFIED";
+    case TApiTopUpReason.TAPI_TOP_UP_REASON_NOT_PROVISIONED:
+      return "TAPI_TOP_UP_REASON_NOT_PROVISIONED";
+    case TApiTopUpReason.TAPI_TOP_UP_REASON_PURCHASE_PENDING:
+      return "TAPI_TOP_UP_REASON_PURCHASE_PENDING";
+    case TApiTopUpReason.TAPI_TOP_UP_REASON_NO_OFFERS:
+      return "TAPI_TOP_UP_REASON_NO_OFFERS";
+    case TApiTopUpReason.TAPI_TOP_UP_REASON_UNKNOWN:
+      return "TAPI_TOP_UP_REASON_UNKNOWN";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiTopUpReason");
+  }
+}
+
+/**
+ * TApiSandboxDisposition's value names carry the TAPI_SANDBOX_DISPOSITION_
+ * prefix rather than the SANDBOX_DISPOSITION_ the linter would otherwise
+ * want, because SandboxDisposition (unprefixed) already exists as an enum in
+ * proto-internal/tyto/runtime/v1/workflow_internal.proto, and every message
+ * and enum name across proto/ and proto-internal/ must be globally unique
+ * since both share package tyto.runtime.v1. See buf.yaml's ENUM_VALUE_PREFIX
+ * ignore entry for this file.
+ */
+export enum TApiSandboxDisposition {
+  TAPI_SANDBOX_DISPOSITION_UNSPECIFIED = 0,
+  /** TAPI_SANDBOX_DISPOSITION_DELETE - Delete the sandbox when the run ends, however it ends. The default. */
+  TAPI_SANDBOX_DISPOSITION_DELETE = 1,
+  /** TAPI_SANDBOX_DISPOSITION_KEEP - Leave it running. For a caller who wants to inspect what the job did. */
+  TAPI_SANDBOX_DISPOSITION_KEEP = 2,
+}
+
+export function tApiSandboxDispositionFromJSON(object: any): TApiSandboxDisposition {
+  switch (object) {
+    case 0:
+    case "TAPI_SANDBOX_DISPOSITION_UNSPECIFIED":
+      return TApiSandboxDisposition.TAPI_SANDBOX_DISPOSITION_UNSPECIFIED;
+    case 1:
+    case "TAPI_SANDBOX_DISPOSITION_DELETE":
+      return TApiSandboxDisposition.TAPI_SANDBOX_DISPOSITION_DELETE;
+    case 2:
+    case "TAPI_SANDBOX_DISPOSITION_KEEP":
+      return TApiSandboxDisposition.TAPI_SANDBOX_DISPOSITION_KEEP;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiSandboxDisposition");
+  }
+}
+
+export function tApiSandboxDispositionToJSON(object: TApiSandboxDisposition): string {
+  switch (object) {
+    case TApiSandboxDisposition.TAPI_SANDBOX_DISPOSITION_UNSPECIFIED:
+      return "TAPI_SANDBOX_DISPOSITION_UNSPECIFIED";
+    case TApiSandboxDisposition.TAPI_SANDBOX_DISPOSITION_DELETE:
+      return "TAPI_SANDBOX_DISPOSITION_DELETE";
+    case TApiSandboxDisposition.TAPI_SANDBOX_DISPOSITION_KEEP:
+      return "TAPI_SANDBOX_DISPOSITION_KEEP";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiSandboxDisposition");
+  }
+}
+
+/**
+ * TApiJobRunTimelineStatus's value names carry the TAPI_JOB_RUN_TIMELINE_
+ * STATUS_ prefix for the same globally-unique-name reason
+ * TApiSandboxDisposition documents above; see buf.yaml's ENUM_VALUE_PREFIX
+ * ignore entry.
+ */
+export enum TApiJobRunTimelineStatus {
+  TAPI_JOB_RUN_TIMELINE_STATUS_UNSPECIFIED = 0,
+  TAPI_JOB_RUN_TIMELINE_STATUS_SCHEDULED = 1,
+  TAPI_JOB_RUN_TIMELINE_STATUS_RUNNING = 2,
+  TAPI_JOB_RUN_TIMELINE_STATUS_COMPLETED = 3,
+  TAPI_JOB_RUN_TIMELINE_STATUS_FAILED = 4,
+  TAPI_JOB_RUN_TIMELINE_STATUS_CANCELED = 5,
+}
+
+export function tApiJobRunTimelineStatusFromJSON(object: any): TApiJobRunTimelineStatus {
+  switch (object) {
+    case 0:
+    case "TAPI_JOB_RUN_TIMELINE_STATUS_UNSPECIFIED":
+      return TApiJobRunTimelineStatus.TAPI_JOB_RUN_TIMELINE_STATUS_UNSPECIFIED;
+    case 1:
+    case "TAPI_JOB_RUN_TIMELINE_STATUS_SCHEDULED":
+      return TApiJobRunTimelineStatus.TAPI_JOB_RUN_TIMELINE_STATUS_SCHEDULED;
+    case 2:
+    case "TAPI_JOB_RUN_TIMELINE_STATUS_RUNNING":
+      return TApiJobRunTimelineStatus.TAPI_JOB_RUN_TIMELINE_STATUS_RUNNING;
+    case 3:
+    case "TAPI_JOB_RUN_TIMELINE_STATUS_COMPLETED":
+      return TApiJobRunTimelineStatus.TAPI_JOB_RUN_TIMELINE_STATUS_COMPLETED;
+    case 4:
+    case "TAPI_JOB_RUN_TIMELINE_STATUS_FAILED":
+      return TApiJobRunTimelineStatus.TAPI_JOB_RUN_TIMELINE_STATUS_FAILED;
+    case 5:
+    case "TAPI_JOB_RUN_TIMELINE_STATUS_CANCELED":
+      return TApiJobRunTimelineStatus.TAPI_JOB_RUN_TIMELINE_STATUS_CANCELED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiJobRunTimelineStatus");
+  }
+}
+
+export function tApiJobRunTimelineStatusToJSON(object: TApiJobRunTimelineStatus): string {
+  switch (object) {
+    case TApiJobRunTimelineStatus.TAPI_JOB_RUN_TIMELINE_STATUS_UNSPECIFIED:
+      return "TAPI_JOB_RUN_TIMELINE_STATUS_UNSPECIFIED";
+    case TApiJobRunTimelineStatus.TAPI_JOB_RUN_TIMELINE_STATUS_SCHEDULED:
+      return "TAPI_JOB_RUN_TIMELINE_STATUS_SCHEDULED";
+    case TApiJobRunTimelineStatus.TAPI_JOB_RUN_TIMELINE_STATUS_RUNNING:
+      return "TAPI_JOB_RUN_TIMELINE_STATUS_RUNNING";
+    case TApiJobRunTimelineStatus.TAPI_JOB_RUN_TIMELINE_STATUS_COMPLETED:
+      return "TAPI_JOB_RUN_TIMELINE_STATUS_COMPLETED";
+    case TApiJobRunTimelineStatus.TAPI_JOB_RUN_TIMELINE_STATUS_FAILED:
+      return "TAPI_JOB_RUN_TIMELINE_STATUS_FAILED";
+    case TApiJobRunTimelineStatus.TAPI_JOB_RUN_TIMELINE_STATUS_CANCELED:
+      return "TAPI_JOB_RUN_TIMELINE_STATUS_CANCELED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiJobRunTimelineStatus");
+  }
+}
+
+/**
+ * TApiJobRunAction is what the caller may do to a run right now. The server
+ * decides and the client renders; a UI must not re-derive these from status
+ * alone -- see the internal JobRunAction's doc comment in
+ * workflow_internal.proto for the full reasoning, including why RETRY is
+ * conditional on whether the run's ephemeral sandbox is still reusable. Value
+ * names carry the TAPI_ prefix for the same reason TApiSandboxDisposition's
+ * do; see buf.yaml's ENUM_VALUE_PREFIX ignore entry.
+ */
+export enum TApiJobRunAction {
+  TAPI_JOB_RUN_ACTION_UNSPECIFIED = 0,
+  TAPI_JOB_RUN_ACTION_CANCEL = 1,
+  TAPI_JOB_RUN_ACTION_RERUN = 2,
+  TAPI_JOB_RUN_ACTION_RETRY = 3,
+  TAPI_JOB_RUN_ACTION_DELETE = 4,
+  TAPI_JOB_RUN_ACTION_DELETE_SANDBOX = 5,
+}
+
+export function tApiJobRunActionFromJSON(object: any): TApiJobRunAction {
+  switch (object) {
+    case 0:
+    case "TAPI_JOB_RUN_ACTION_UNSPECIFIED":
+      return TApiJobRunAction.TAPI_JOB_RUN_ACTION_UNSPECIFIED;
+    case 1:
+    case "TAPI_JOB_RUN_ACTION_CANCEL":
+      return TApiJobRunAction.TAPI_JOB_RUN_ACTION_CANCEL;
+    case 2:
+    case "TAPI_JOB_RUN_ACTION_RERUN":
+      return TApiJobRunAction.TAPI_JOB_RUN_ACTION_RERUN;
+    case 3:
+    case "TAPI_JOB_RUN_ACTION_RETRY":
+      return TApiJobRunAction.TAPI_JOB_RUN_ACTION_RETRY;
+    case 4:
+    case "TAPI_JOB_RUN_ACTION_DELETE":
+      return TApiJobRunAction.TAPI_JOB_RUN_ACTION_DELETE;
+    case 5:
+    case "TAPI_JOB_RUN_ACTION_DELETE_SANDBOX":
+      return TApiJobRunAction.TAPI_JOB_RUN_ACTION_DELETE_SANDBOX;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiJobRunAction");
+  }
+}
+
+export function tApiJobRunActionToJSON(object: TApiJobRunAction): string {
+  switch (object) {
+    case TApiJobRunAction.TAPI_JOB_RUN_ACTION_UNSPECIFIED:
+      return "TAPI_JOB_RUN_ACTION_UNSPECIFIED";
+    case TApiJobRunAction.TAPI_JOB_RUN_ACTION_CANCEL:
+      return "TAPI_JOB_RUN_ACTION_CANCEL";
+    case TApiJobRunAction.TAPI_JOB_RUN_ACTION_RERUN:
+      return "TAPI_JOB_RUN_ACTION_RERUN";
+    case TApiJobRunAction.TAPI_JOB_RUN_ACTION_RETRY:
+      return "TAPI_JOB_RUN_ACTION_RETRY";
+    case TApiJobRunAction.TAPI_JOB_RUN_ACTION_DELETE:
+      return "TAPI_JOB_RUN_ACTION_DELETE";
+    case TApiJobRunAction.TAPI_JOB_RUN_ACTION_DELETE_SANDBOX:
+      return "TAPI_JOB_RUN_ACTION_DELETE_SANDBOX";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiJobRunAction");
+  }
+}
+
+/**
+ * TApiJobRunStatus's value names carry the TAPI_ prefix for the same reason
+ * TApiSandboxDisposition's do; see buf.yaml's ENUM_VALUE_PREFIX ignore entry.
+ */
+export enum TApiJobRunStatus {
+  TAPI_JOB_RUN_STATUS_UNSPECIFIED = 0,
+  TAPI_JOB_RUN_STATUS_RUNNING = 1,
+  TAPI_JOB_RUN_STATUS_COMPLETED = 2,
+  TAPI_JOB_RUN_STATUS_FAILED = 3,
+  TAPI_JOB_RUN_STATUS_CANCELED = 4,
+  TAPI_JOB_RUN_STATUS_TIMED_OUT = 5,
+  TAPI_JOB_RUN_STATUS_TERMINATED = 6,
+}
+
+export function tApiJobRunStatusFromJSON(object: any): TApiJobRunStatus {
+  switch (object) {
+    case 0:
+    case "TAPI_JOB_RUN_STATUS_UNSPECIFIED":
+      return TApiJobRunStatus.TAPI_JOB_RUN_STATUS_UNSPECIFIED;
+    case 1:
+    case "TAPI_JOB_RUN_STATUS_RUNNING":
+      return TApiJobRunStatus.TAPI_JOB_RUN_STATUS_RUNNING;
+    case 2:
+    case "TAPI_JOB_RUN_STATUS_COMPLETED":
+      return TApiJobRunStatus.TAPI_JOB_RUN_STATUS_COMPLETED;
+    case 3:
+    case "TAPI_JOB_RUN_STATUS_FAILED":
+      return TApiJobRunStatus.TAPI_JOB_RUN_STATUS_FAILED;
+    case 4:
+    case "TAPI_JOB_RUN_STATUS_CANCELED":
+      return TApiJobRunStatus.TAPI_JOB_RUN_STATUS_CANCELED;
+    case 5:
+    case "TAPI_JOB_RUN_STATUS_TIMED_OUT":
+      return TApiJobRunStatus.TAPI_JOB_RUN_STATUS_TIMED_OUT;
+    case 6:
+    case "TAPI_JOB_RUN_STATUS_TERMINATED":
+      return TApiJobRunStatus.TAPI_JOB_RUN_STATUS_TERMINATED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiJobRunStatus");
+  }
+}
+
+export function tApiJobRunStatusToJSON(object: TApiJobRunStatus): string {
+  switch (object) {
+    case TApiJobRunStatus.TAPI_JOB_RUN_STATUS_UNSPECIFIED:
+      return "TAPI_JOB_RUN_STATUS_UNSPECIFIED";
+    case TApiJobRunStatus.TAPI_JOB_RUN_STATUS_RUNNING:
+      return "TAPI_JOB_RUN_STATUS_RUNNING";
+    case TApiJobRunStatus.TAPI_JOB_RUN_STATUS_COMPLETED:
+      return "TAPI_JOB_RUN_STATUS_COMPLETED";
+    case TApiJobRunStatus.TAPI_JOB_RUN_STATUS_FAILED:
+      return "TAPI_JOB_RUN_STATUS_FAILED";
+    case TApiJobRunStatus.TAPI_JOB_RUN_STATUS_CANCELED:
+      return "TAPI_JOB_RUN_STATUS_CANCELED";
+    case TApiJobRunStatus.TAPI_JOB_RUN_STATUS_TIMED_OUT:
+      return "TAPI_JOB_RUN_STATUS_TIMED_OUT";
+    case TApiJobRunStatus.TAPI_JOB_RUN_STATUS_TERMINATED:
+      return "TAPI_JOB_RUN_STATUS_TERMINATED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiJobRunStatus");
+  }
+}
+
+/**
+ * TApiScheduleOverlap's value names carry the TAPI_ prefix for the same
+ * globally-unique-name reason TApiSandboxDisposition's do; see buf.yaml's
+ * ENUM_VALUE_PREFIX ignore entry.
+ */
+export enum TApiScheduleOverlap {
+  TAPI_SCHEDULE_OVERLAP_UNSPECIFIED = 0,
+  TAPI_SCHEDULE_OVERLAP_SKIP = 1,
+  TAPI_SCHEDULE_OVERLAP_BUFFER_ONE = 2,
+  TAPI_SCHEDULE_OVERLAP_ALLOW_ALL = 3,
+}
+
+export function tApiScheduleOverlapFromJSON(object: any): TApiScheduleOverlap {
+  switch (object) {
+    case 0:
+    case "TAPI_SCHEDULE_OVERLAP_UNSPECIFIED":
+      return TApiScheduleOverlap.TAPI_SCHEDULE_OVERLAP_UNSPECIFIED;
+    case 1:
+    case "TAPI_SCHEDULE_OVERLAP_SKIP":
+      return TApiScheduleOverlap.TAPI_SCHEDULE_OVERLAP_SKIP;
+    case 2:
+    case "TAPI_SCHEDULE_OVERLAP_BUFFER_ONE":
+      return TApiScheduleOverlap.TAPI_SCHEDULE_OVERLAP_BUFFER_ONE;
+    case 3:
+    case "TAPI_SCHEDULE_OVERLAP_ALLOW_ALL":
+      return TApiScheduleOverlap.TAPI_SCHEDULE_OVERLAP_ALLOW_ALL;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiScheduleOverlap");
+  }
+}
+
+export function tApiScheduleOverlapToJSON(object: TApiScheduleOverlap): string {
+  switch (object) {
+    case TApiScheduleOverlap.TAPI_SCHEDULE_OVERLAP_UNSPECIFIED:
+      return "TAPI_SCHEDULE_OVERLAP_UNSPECIFIED";
+    case TApiScheduleOverlap.TAPI_SCHEDULE_OVERLAP_SKIP:
+      return "TAPI_SCHEDULE_OVERLAP_SKIP";
+    case TApiScheduleOverlap.TAPI_SCHEDULE_OVERLAP_BUFFER_ONE:
+      return "TAPI_SCHEDULE_OVERLAP_BUFFER_ONE";
+    case TApiScheduleOverlap.TAPI_SCHEDULE_OVERLAP_ALLOW_ALL:
+      return "TAPI_SCHEDULE_OVERLAP_ALLOW_ALL";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiScheduleOverlap");
+  }
+}
+
+/**
+ * TApiScheduleAction's value names carry the TAPI_ prefix for the same
+ * reason TApiSandboxDisposition's do; see buf.yaml's ENUM_VALUE_PREFIX
+ * ignore entry.
+ */
+export enum TApiScheduleAction {
+  TAPI_SCHEDULE_ACTION_UNSPECIFIED = 0,
+  TAPI_SCHEDULE_ACTION_PAUSE = 1,
+  TAPI_SCHEDULE_ACTION_RESUME = 2,
+  TAPI_SCHEDULE_ACTION_TRIGGER = 3,
+  TAPI_SCHEDULE_ACTION_UPDATE = 4,
+  TAPI_SCHEDULE_ACTION_DELETE = 5,
+}
+
+export function tApiScheduleActionFromJSON(object: any): TApiScheduleAction {
+  switch (object) {
+    case 0:
+    case "TAPI_SCHEDULE_ACTION_UNSPECIFIED":
+      return TApiScheduleAction.TAPI_SCHEDULE_ACTION_UNSPECIFIED;
+    case 1:
+    case "TAPI_SCHEDULE_ACTION_PAUSE":
+      return TApiScheduleAction.TAPI_SCHEDULE_ACTION_PAUSE;
+    case 2:
+    case "TAPI_SCHEDULE_ACTION_RESUME":
+      return TApiScheduleAction.TAPI_SCHEDULE_ACTION_RESUME;
+    case 3:
+    case "TAPI_SCHEDULE_ACTION_TRIGGER":
+      return TApiScheduleAction.TAPI_SCHEDULE_ACTION_TRIGGER;
+    case 4:
+    case "TAPI_SCHEDULE_ACTION_UPDATE":
+      return TApiScheduleAction.TAPI_SCHEDULE_ACTION_UPDATE;
+    case 5:
+    case "TAPI_SCHEDULE_ACTION_DELETE":
+      return TApiScheduleAction.TAPI_SCHEDULE_ACTION_DELETE;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiScheduleAction");
+  }
+}
+
+export function tApiScheduleActionToJSON(object: TApiScheduleAction): string {
+  switch (object) {
+    case TApiScheduleAction.TAPI_SCHEDULE_ACTION_UNSPECIFIED:
+      return "TAPI_SCHEDULE_ACTION_UNSPECIFIED";
+    case TApiScheduleAction.TAPI_SCHEDULE_ACTION_PAUSE:
+      return "TAPI_SCHEDULE_ACTION_PAUSE";
+    case TApiScheduleAction.TAPI_SCHEDULE_ACTION_RESUME:
+      return "TAPI_SCHEDULE_ACTION_RESUME";
+    case TApiScheduleAction.TAPI_SCHEDULE_ACTION_TRIGGER:
+      return "TAPI_SCHEDULE_ACTION_TRIGGER";
+    case TApiScheduleAction.TAPI_SCHEDULE_ACTION_UPDATE:
+      return "TAPI_SCHEDULE_ACTION_UPDATE";
+    case TApiScheduleAction.TAPI_SCHEDULE_ACTION_DELETE:
+      return "TAPI_SCHEDULE_ACTION_DELETE";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TApiScheduleAction");
+  }
+}
+
 export interface TApiServiceCreateRequest {
   apiKey: string;
   idempotencyKey: string;
@@ -176,6 +609,11 @@ export interface TApiSandboxMetadata {
   resolvedTemplateVersion: string;
   observed: TerminalStatus | undefined;
   name: string;
+  /**
+   * Creation timestamp from the durable sandbox projection. This is stable
+   * across suspend/resume and distinct from observed-state updates.
+   */
+  createdAtUnixNanos: number;
 }
 
 export interface TApiGetSandboxRequest {
@@ -268,36 +706,6 @@ export interface TerminalStatus {
   message: string;
 }
 
-export interface ReportObservedStateRequest {
-  operationId: string;
-  sandboxId: string;
-  hostId: string;
-  requestFingerprint: string;
-  fence: Fence | undefined;
-  observed: TerminalStatus | undefined;
-  tenantId: string;
-  template: TemplateBinding | undefined;
-  lifecycleOperationId: string;
-}
-
-export interface ReportObservedStateResponse {
-}
-
-/** @deprecated */
-export interface ReportTerminalRequest {
-  operationId: string;
-  sandboxId: string;
-  hostId: string;
-  requestFingerprint: string;
-  fence: Fence | undefined;
-  terminal: TerminalStatus | undefined;
-  tenantId: string;
-  template: TemplateBinding | undefined;
-}
-
-export interface ReportTerminalResponse {
-}
-
 /**
  * PreviewInfo is a preview binding plus the public URL it is reachable at.
  * The URL is added here rather than stored: only TApi knows the edge domain,
@@ -375,6 +783,69 @@ export interface TApiListOrganizationsResponse {
   organizations: TApiOrganization[];
 }
 
+export interface TApiListTemplatesRequest {
+  apiKey: string;
+}
+
+export interface TApiListTemplatesResponse {
+  templates: TApiTemplate[];
+}
+
+/**
+ * TApiTemplate is one template_id/version binding the catalog offers.
+ * One entry per version, not one per template_id: a template_id with
+ * several published versions appears once per version, and is_default marks
+ * the one a caller resolving by template_id alone (version omitted) gets.
+ */
+export interface TApiTemplate {
+  templateId: string;
+  version: string;
+  digest: string;
+  isDefault: boolean;
+  /**
+   * metadata is optional: an entry the catalog author never annotated
+   * reports every field empty rather than failing to list.
+   */
+  metadata: TApiTemplateMetadata | undefined;
+}
+
+/**
+ * TApiTemplateMetadata describes what a template actually offers, for both a
+ * human choosing one in a UI and an LLM choosing one on a caller's behalf --
+ * the same structured facts serve both rather than two differently-worded
+ * blobs.
+ */
+export interface TApiTemplateMetadata {
+  /**
+   * description is a short, human- and LLM-readable summary of the
+   * template's purpose.
+   */
+  description: string;
+  /**
+   * os and os_version name the guest's base operating system, e.g.
+   * "ubuntu" / "latest". Free text: the catalog does not validate against a
+   * known-OS list.
+   */
+  os: string;
+  osVersion: string;
+  /**
+   * stacks is every language/runtime toolchain preinstalled in the
+   * template.
+   */
+  stacks: TApiTemplateStack[];
+  /**
+   * agent_cli_support names the AI agent CLIs preinstalled and on PATH,
+   * e.g. "claude-code", "codex", "gemini-cli".
+   */
+  agentCliSupport: string[];
+}
+
+/** TApiTemplateStack is one language/runtime a template has preinstalled. */
+export interface TApiTemplateStack {
+  name: string;
+  version: string;
+}
+
 /**
  * TApiOrganization mirrors the Organization schema already served over REST
  * (internal/tapi/httpapi/openapi.yaml), so the dashboard and the SDKs
@@ -391,6 +862,711 @@ export interface TApiOrganization {
   /** role is the caller's role in this organization: "owner" or "member". */
   role: string;
   createdAtUnixNanos: number;
+}
+
+export interface TApiGetOrganizationBillingRequest {
+  apiKey: string;
+  organizationId: string;
+  /** Optional window over recorded usage. Both unset means everything so far. */
+  fromUnixNanos: number;
+  toUnixNanos: number;
+}
+
+export interface TApiGetOrganizationBillingResponse {
+  computeSeconds: number;
+  storageHours: number;
+  /**
+   * members breaks the totals down by the member whose action opened each
+   * interval. An empty user_id is the unattributed bucket: usage whose actor
+   * record was lost, which still bills the organization in full.
+   */
+  members: TApiMemberUsage[];
+  creditBalance: number;
+  /**
+   * blocked reports whether new sandboxes are currently refused for lack of
+   * credit.
+   */
+  blocked: boolean;
+}
+
+export interface TApiMemberUsage {
+  userId: string;
+  computeSeconds: number;
+  storageHours: number;
+}
+
+/**
+ * TApiListOrganizationTopUpOffers returns Lago-configured offers an owner may
+ * show in the website. It does not initiate payment or grant credit.
+ */
+export interface TApiListOrganizationTopUpOffersRequest {
+  apiKey: string;
+  organizationId: string;
+}
+
+export interface TApiListOrganizationTopUpOffersResponse {
+  offers: TApiTopUpOffer[];
+}
+
+export interface TApiTopUpOffer {
+  code: string;
+  name: string;
+  amountCents: number;
+  currency: string;
+}
+
+/**
+ * TApiStartOrganizationTopUpPurchase begins, or resumes, a Lago-managed
+ * checkout for one configured top-up offer or one bounded custom amount. The returned URL is an opaque,
+ * short-lived provider capability; no TAPI or billing component talks to
+ * Stripe or marks credit settled.
+ */
+export interface TApiStartOrganizationTopUpPurchaseRequest {
+  apiKey: string;
+  organizationId: string;
+  offerCode: string;
+  idempotencyKey: string;
+  amountCents?: number | undefined;
+}
+
+export interface TApiStartOrganizationTopUpPurchaseResponse {
+  offerCode: string;
+  amountCents: number;
+  currency: string;
+  status: string;
+  paymentUrl: string;
+}
+
+export interface TApiApplyOrganizationCouponRequest {
+  apiKey: string;
+  organizationId: string;
+  couponCode: string;
+}
+
+export interface TApiApplyOrganizationCouponResponse {
+  coupon: TApiCoupon | undefined;
+}
+
+export interface TApiListOrganizationCouponsRequest {
+  apiKey: string;
+  organizationId: string;
+}
+
+export interface TApiListOrganizationCouponsResponse {
+  coupons: TApiCoupon[];
+}
+
+export interface TApiCoupon {
+  id: string;
+  code: string;
+  name: string;
+  status: string;
+  amountCents: number;
+  amountCentsRemaining: number;
+  currency: string;
+  percentageRate: number;
+  frequency: string;
+  frequencyRemaining: number;
+  expiresAtUnixNanos: number;
+}
+
+export interface TApiListOrganizationInvoicesRequest {
+  apiKey: string;
+  organizationId: string;
+  /** page is 1-based. Zero means the first page. */
+  page: number;
+  perPage: number;
+}
+
+export interface TApiListOrganizationInvoicesResponse {
+  /**
+   * Listed invoices carry no line items and no billed period: the provider
+   * omits them from its collection response, and filling them in from the
+   * issuing date would attribute usage to the wrong period. Read one invoice
+   * to get them.
+   */
+  invoices: TApiInvoice[];
+}
+
+export interface TApiGetOrganizationInvoiceRequest {
+  apiKey: string;
+  organizationId: string;
+  invoiceId: string;
+}
+
+export interface TApiGetOrganizationInvoiceResponse {
+  invoice:
+    | TApiInvoice
+    | undefined;
+  /**
+   * members breaks the invoiced period down by member. The provider cannot
+   * supply this: user ids deliberately never leave the cluster.
+   */
+  members: TApiMemberUsage[];
+}
+
+/**
+ * TApiInvoice is one issued bill.
+ *
+ * It carries no link to the provider's hosted copy. Those URLs are
+ * unauthenticated -- anyone holding one can read the document -- so they are
+ * dropped where the provider is adapted and never reach this message.
+ */
+export interface TApiInvoice {
+  id: string;
+  number: string;
+  /**
+   * status is "draft", "finalized", or "voided". Only a finalized invoice has
+   * moved money.
+   */
+  status: string;
+  paymentStatus: string;
+  currency: string;
+  issuedOnUnixNanos: number;
+  /** The billed period, derived from the line items. Zero in a listing. */
+  periodFromUnixNanos: number;
+  periodToUnixNanos: number;
+  /** Amounts are in the currency's minor unit, as the provider reports them. */
+  subtotalCents: number;
+  taxCents: number;
+  totalCents: number;
+  /**
+   * prepaid_credit_cents is how much of this invoice was settled from the
+   * organization's wallets rather than owed.
+   */
+  prepaidCreditCents: number;
+  lines: TApiInvoiceLine[];
+  /**
+   * Finalized provider outcome, in minor units. coupon_cents is the amount
+   * Lago actually applied; it is not a local estimate from active coupons.
+   */
+  feesCents: number;
+  couponCents: number;
+  prepaidGrantedCreditCents: number;
+  prepaidPurchasedCreditCents: number;
+}
+
+export interface TApiInvoiceLine {
+  /**
+   * code is the billable metric code, or the plan code for the subscription
+   * line itself.
+   */
+  code: string;
+  /** kind distinguishes a usage charge from the flat subscription line. */
+  kind: string;
+  units: number;
+  cents: number;
+  fromUnixNanos: number;
+  toUnixNanos: number;
+}
+
+export interface TApiGetOrganizationBillingOverviewRequest {
+  apiKey: string;
+  organizationId: string;
+}
+
+export interface TApiGetOrganizationBillingOverviewResponse {
+  currency: string;
+  provisioned: boolean;
+  periodFromUnixNanos: number;
+  periodToUnixNanos: number;
+  periodComputeSeconds: number;
+  periodStorageHours: number;
+  /**
+   * period_estimated_cents is valid only when period_estimated_cents_valid
+   * is true. A missing unit price is reported as invalid rather than as a
+   * zero estimate, which would show priced usage as free.
+   */
+  periodEstimatedCents: number;
+  periodEstimatedCentsValid: boolean;
+  /**
+   * The credit fields are two independent optional groups. balance_valid may
+   * be false while effective_valid is true, and vice versa: a fresh balance
+   * read failing must never suppress a perfectly good cached effective
+   * verdict, and the absence of any cached verdict yet must never be papered
+   * over with the settled balance, which is a different number.
+   */
+  creditBalance: number;
+  creditBalanceCheckedAtUnixNanos: number;
+  creditBalanceValid: boolean;
+  creditEffectiveBalance: number;
+  creditBlocked: boolean;
+  creditEffectiveCheckedAtUnixNanos: number;
+  creditEffectiveValid: boolean;
+  /**
+   * The limits fields are one optional group, valid only when limits_valid
+   * is true. computed_at is the entitlement's own timestamp, which may
+   * predate this response when a fresh read failed and a cached value was
+   * served instead.
+   */
+  limitsStorageBillingEnabled: boolean;
+  limitsMaxSandboxes: number;
+  limitsSignupPromotionCents: number;
+  limitsMonthlyPromotionCents: number;
+  limitsComputedAtUnixNanos: number;
+  limitsValid: boolean;
+  /**
+   * sandboxes_in_use is TAPI's own count of this organization's non-FAILED,
+   * non-DELETED sandboxes -- billingd has no view of the sandbox
+   * projection, so this never crosses the billing socket. It is an observed
+   * count, not an admission guarantee: the in-process quota gate also
+   * counts in-flight reservations, so it may transiently run ahead of this
+   * number until the projection observes or retires them.
+   */
+  sandboxesInUse: number;
+  topUpReason: TApiTopUpReason;
+  degraded: TApiDegradation[];
+}
+
+export interface TApiGetOrganizationUsageBreakdownRequest {
+  apiKey: string;
+  organizationId: string;
+  /**
+   * from and to are both required: a breakdown is always a bounded window,
+   * unlike TApiGetOrganizationBillingRequest's all-time default.
+   */
+  fromUnixNanos: number;
+  toUnixNanos: number;
+}
+
+export interface TApiBillingServiceUsage {
+  metricCode: string;
+  unit: string;
+  units: number;
+  /**
+   * estimated_cents and share are valid only together, when priced_valid is
+   * true. share has no meaning without a price: it compares metrics measured
+   * in different units (seconds, hours), so money is the only common unit
+   * and there is no unpriced fallback.
+   */
+  estimatedCents: number;
+  share: number;
+  pricedValid: boolean;
+  /**
+   * heaviest_user_id is the top consumer of this metric, or empty for the
+   * unattributed bucket -- distinguished from heaviest_unattributed exactly
+   * as TApiMemberUsage's user_id is, so an empty string is never ambiguous
+   * with "no heaviest consumer at all" (heaviest_present is false).
+   */
+  heaviestUserId: string;
+  heaviestUnattributed: boolean;
+  heaviestUnits: number;
+  heaviestPresent: boolean;
+}
+
+export interface TApiGetOrganizationUsageBreakdownResponse {
+  currency: string;
+  periodFromUnixNanos: number;
+  periodToUnixNanos: number;
+  services: TApiBillingServiceUsage[];
+  members: TApiMemberUsage[];
+  degraded: TApiDegradation[];
+}
+
+export interface TApiGetOrganizationUsageSeriesRequest {
+  apiKey: string;
+  organizationId: string;
+  fromUnixNanos: number;
+  toUnixNanos: number;
+  /** bucket is "hour" or "day". Any other value is rejected. */
+  bucket: string;
+}
+
+export interface TApiBillingUsageSeriesPoint {
+  fromUnixNanos: number;
+  toUnixNanos: number;
+  computeSeconds: number;
+  storageHours: number;
+  estimatedCents: number;
+  /**
+   * estimated_cents_valid is either true for every point in a response or
+   * false for every point: one price read prices the whole series, so a
+   * point is never priced while its neighbor is not.
+   */
+  estimatedCentsValid: boolean;
+}
+
+export interface TApiGetOrganizationUsageSeriesResponse {
+  currency: string;
+  periodFromUnixNanos: number;
+  periodToUnixNanos: number;
+  bucket: string;
+  /** points contains only non-empty buckets. */
+  points: TApiBillingUsageSeriesPoint[];
+  degraded: TApiDegradation[];
+}
+
+export interface TApiListOrganizationPaymentsRequest {
+  apiKey: string;
+  organizationId: string;
+  /** page is 1-based. Zero means the first page. */
+  page: number;
+  perPage: number;
+}
+
+/**
+ * TApiPayment is one entry in an organization's merged payment history. It
+ * carries no wallet id, provider transaction id, or payment URL: none of
+ * those belongs in a history list. The idempotency key is the one
+ * deliberate exception, returned so an authorized billing manager can
+ * resume a pending checkout by reposting the same offer and key.
+ */
+export interface TApiPayment {
+  /** kind is "topup" or "grant". */
+  kind: string;
+  atUnixNanos: number;
+  /** Set when kind == "topup". */
+  idempotencyKey: string;
+  offerCode: string;
+  offerName: string;
+  amountCents: number;
+  currency: string;
+  credits: number;
+  status: string;
+  invoiceId: string;
+  /** Set when kind == "grant". */
+  period: string;
+}
+
+export interface TApiListOrganizationPaymentsResponse {
+  payments: TApiPayment[];
+  /**
+   * has_more is a plain bool, not an optional presence field: false is
+   * itself the meaningful "no further pages" answer, not an absent value.
+   */
+  hasMore: boolean;
+}
+
+/**
+ * TApiJobSpec is the public job definition. Its command fields mirror the
+ * REST direct-Exec body -- cmd, env, path, stdin -- because a job command and
+ * an interactive command are the same thing. A second shape would drift.
+ */
+export interface TApiJobSpec {
+  /**
+   * Exactly one target. TApi refuses both-or-neither before it reaches the
+   * workflows module.
+   */
+  existingSandboxId: string;
+  newSandbox:
+    | TApiJobSandboxSpec
+    | undefined;
+  /** Exactly one of cmd and script. */
+  cmd: string[];
+  script: TApiJobScriptSpec | undefined;
+  env: { [key: string]: string };
+  path: string;
+  stdin: Buffer;
+  commandTimeoutSeconds: number;
+  runDeadlineSeconds: number;
+  maxOutputBytes: number;
+  disposition: TApiSandboxDisposition;
+  resumeIfSuspended: boolean;
+  name: string;
+  preRunScript: TApiJobScriptSpec | undefined;
+}
+
+export interface TApiJobSpec_EnvEntry {
+  key: string;
+  value: string;
+}
+
+export interface TApiJobSandboxSpec {
+  template: TemplateBinding | undefined;
+  network: NetworkPolicy | undefined;
+  name: string;
+}
+
+/**
+ * TApiJobScriptSpec is a script the user wrote or uploaded, in the same shape
+ * the internal ScriptSpec pins. See that message's doc comment in
+ * workflow_internal.proto for why the body travels inline and is capped.
+ */
+export interface TApiJobScriptSpec {
+  body: Buffer;
+  interpreter: string;
+  args: string[];
+  filename: string;
+}
+
+export interface TApiRunJobRequest {
+  apiKey: string;
+  /**
+   * idempotency_key is required, exactly as Create's is, and for the same
+   * reason: it is what makes a retried request the same run rather than a
+   * second one. The run id is derived from it and the resolved tenant, so a
+   * caller cannot address another tenant's run by guessing.
+   */
+  idempotencyKey: string;
+  spec: TApiJobSpec | undefined;
+}
+
+export interface TApiRunJobResponse {
+  run: TApiJobRun | undefined;
+}
+
+export interface TApiStartJobRequest {
+  apiKey: string;
+  idempotencyKey: string;
+  spec: TApiJobSpec | undefined;
+}
+
+export interface TApiStartJobResponse {
+  runId: string;
+  alreadyRunning: boolean;
+}
+
+export interface TApiGetJobRunRequest {
+  apiKey: string;
+  runId: string;
+}
+
+export interface TApiGetJobRunResponse {
+  detail: TApiJobRunDetail | undefined;
+}
+
+export interface TApiListJobRunsRequest {
+  apiKey: string;
+  sandboxId: string;
+  scheduleId: string;
+  status: TApiJobRunStatus;
+  pageSize: number;
+  pageToken: string;
+}
+
+export interface TApiListJobRunsResponse {
+  runs: TApiJobRun[];
+  nextPageToken: string;
+}
+
+export interface TApiCancelJobRunRequest {
+  apiKey: string;
+  runId: string;
+}
+
+export interface TApiCancelJobRunResponse {
+}
+
+/**
+ * TApiJobRun is one run's observable summary state, as returned by
+ * TApiListJobRuns.
+ */
+export interface TApiJobRun {
+  runId: string;
+  status: TApiJobRunStatus;
+  sandboxId: string;
+  /**
+   * created_sandbox distinguishes whether this run created sandbox_id or was
+   * given it, which decides whether the caller still owns it after the run.
+   */
+  createdSandbox: boolean;
+  scheduleId: string;
+  startedAtUnixNanos: number;
+  finishedAtUnixNanos: number;
+  result:
+    | TApiJobResult
+    | undefined;
+  /**
+   * failure is the run's own failure -- create/resume/exec-transport failure
+   * -- never the command's own non-zero exit. A command that exits non-zero
+   * is a completed run with a non-zero exit code; conflating the two would
+   * make "did my script fail" unanswerable.
+   */
+  failure: string;
+  /**
+   * cleanup_failed says the run finished but could not delete the sandbox it
+   * created. That sandbox is still billed and still visible in
+   * ListSandboxes, so this is reported rather than swallowed.
+   */
+  cleanupFailed: boolean;
+  /**
+   * available_actions is what the caller may do to this run right now,
+   * computed server-side -- see TApiJobRunAction.
+   */
+  availableActions: TApiJobRunAction[];
+  /** name is the optional human-readable label supplied when the job started. */
+  name: string;
+}
+
+/**
+ * TApiJobRunDetail adds the stored spec and a Temporal-history-derived
+ * timeline to the summary. Returned only by GetJobRun, never by
+ * ListJobRuns, because assembling a timeline is a history read per run and a
+ * listing must stay cheap.
+ */
+export interface TApiJobRunDetail {
+  run:
+    | TApiJobRun
+    | undefined;
+  /**
+   * spec is what the run was started with, echoed back so a caller can see
+   * and re-submit it without having stored it.
+   */
+  spec: TApiJobSpec | undefined;
+  timeline: TApiJobRunTimelineEntry[];
+}
+
+export interface TApiJobRunTimelineEntry {
+  /** name is one of CreateSandbox, WriteScript, ExecCommand, DeleteSandbox. */
+  name: string;
+  status: TApiJobRunTimelineStatus;
+  attempt: number;
+  startedAtUnixNanos: number;
+  finishedAtUnixNanos: number;
+  failure: string;
+}
+
+/**
+ * TApiJobResult mirrors httpapi.DirectExecResponse's shape: the truncation
+ * flags are load-bearing, since output is capped before it enters a Temporal
+ * payload and a caller must be able to tell a short command from a
+ * truncated one.
+ */
+export interface TApiJobResult {
+  exitCode: number;
+  signaled: boolean;
+  signal: number;
+  timedOut: boolean;
+  stdout: Buffer;
+  stderr: Buffer;
+  stdoutTruncated: boolean;
+  stderrTruncated: boolean;
+}
+
+export interface TApiScheduleSpec {
+  /** Exactly one of cron_expressions, interval_seconds, and run_at_unix_nanos. */
+  cronExpressions: string[];
+  intervalSeconds: number;
+  /**
+   * run_at_unix_nanos is a one-shot: a single calendar time. Paired at
+   * creation with a remaining-actions counter of 1, so the schedule retires
+   * itself after firing once. TApi refuses a value in the past.
+   */
+  runAtUnixNanos: number;
+  timeZone: string;
+  jitterSeconds: number;
+  overlap: TApiScheduleOverlap;
+  paused: boolean;
+}
+
+export interface TApiCreateJobScheduleRequest {
+  apiKey: string;
+  idempotencyKey: string;
+  schedule: TApiScheduleSpec | undefined;
+  spec: TApiJobSpec | undefined;
+}
+
+export interface TApiCreateJobScheduleResponse {
+  schedule: TApiJobSchedule | undefined;
+}
+
+export interface TApiGetJobScheduleRequest {
+  apiKey: string;
+  scheduleId: string;
+}
+
+export interface TApiGetJobScheduleResponse {
+  schedule: TApiJobSchedule | undefined;
+}
+
+export interface TApiListJobSchedulesRequest {
+  apiKey: string;
+  pageSize: number;
+  pageToken: string;
+}
+
+export interface TApiListJobSchedulesResponse {
+  schedules: TApiJobSchedule[];
+  nextPageToken: string;
+}
+
+export interface TApiUpdateJobScheduleRequest {
+  apiKey: string;
+  scheduleId: string;
+  schedule: TApiScheduleSpec | undefined;
+  spec: TApiJobSpec | undefined;
+}
+
+export interface TApiUpdateJobScheduleResponse {
+  schedule: TApiJobSchedule | undefined;
+}
+
+export interface TApiSetJobSchedulePausedRequest {
+  apiKey: string;
+  scheduleId: string;
+  paused: boolean;
+  note: string;
+}
+
+export interface TApiSetJobSchedulePausedResponse {
+  schedule: TApiJobSchedule | undefined;
+}
+
+export interface TApiTriggerJobScheduleRequest {
+  apiKey: string;
+  scheduleId: string;
+}
+
+export interface TApiTriggerJobScheduleResponse {
+}
+
+export interface TApiDeleteJobScheduleRequest {
+  apiKey: string;
+  scheduleId: string;
+}
+
+export interface TApiDeleteJobScheduleResponse {
+}
+
+/**
+ * TApiJobSchedule is a durable trigger's observable state, whether recurring
+ * or one-shot.
+ */
+export interface TApiJobSchedule {
+  scheduleId: string;
+  schedule: TApiScheduleSpec | undefined;
+  spec: TApiJobSpec | undefined;
+  paused: boolean;
+  note: string;
+  nextRunAtUnixNanos: number;
+  oneShot: boolean;
+  remainingActions: number;
+  availableActions: TApiScheduleAction[];
+  /**
+   * created_at_unix_nanos and updated_at_unix_nanos are Temporal's own
+   * record of when this schedule was created and last changed (paused,
+   * resumed, or edited) -- this deployment keeps no schedule state of its
+   * own, so these are exactly what the workflow engine reports.
+   */
+  createdAtUnixNanos: number;
+  updatedAtUnixNanos: number;
+  /**
+   * num_actions is how many times this schedule has fired, including manual
+   * triggers.
+   */
+  numActions: number;
+  /**
+   * num_actions_skipped_overlap and num_actions_missed_catchup_window are
+   * health signals: fires dropped because the previous run was still going,
+   * and fires dropped because the server was down or behind past its
+   * catchup window. A schedule that looks paused but is not may show up
+   * here instead.
+   */
+  numActionsSkippedOverlap: number;
+  numActionsMissedCatchupWindow: number;
+  /**
+   * recent_run_ids is the last 10 fires' run ids, oldest first, including
+   * manual triggers. Each one is a valid GetJobRun id, so a caller can
+   * follow a schedule straight to its recent runs without a separate
+   * ListJobRuns(schedule_id=...) call.
+   */
+  recentRunIds: string[];
+  /**
+   * running_run_ids is which of this schedule's own fires are in flight
+   * right now. Non-empty only under an overlap policy that allows more than
+   * one run at a time -- the default (skip) keeps this to at most one.
+   */
+  runningRunIds: string[];
 }
 
 function createBaseTApiServiceCreateRequest(): TApiServiceCreateRequest {
@@ -819,6 +1995,7 @@ function createBaseTApiSandboxMetadata(): TApiSandboxMetadata {
     resolvedTemplateVersion: "",
     observed: undefined,
     name: "",
+    createdAtUnixNanos: 0,
   };
 }
 
@@ -841,6 +2018,9 @@ export const TApiSandboxMetadata: MessageFns<TApiSandboxMetadata> = {
     }
     if (message.name !== "") {
       writer.uint32(50).string(message.name);
+    }
+    if (message.createdAtUnixNanos !== 0) {
+      writer.uint32(56).int64(message.createdAtUnixNanos);
     }
     return writer;
   },
@@ -900,6 +2080,14 @@ export const TApiSandboxMetadata: MessageFns<TApiSandboxMetadata> = {
           message.name = reader.string();
           continue;
         }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.createdAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -933,6 +2121,11 @@ export const TApiSandboxMetadata: MessageFns<TApiSandboxMetadata> = {
         : "",
       observed: isSet(object.observed) ? TerminalStatus.fromJSON(object.observed) : undefined,
       name: isSet(object.name) ? globalThis.String(object.name) : "",
+      createdAtUnixNanos: isSet(object.createdAtUnixNanos)
+        ? globalThis.Number(object.createdAtUnixNanos)
+        : isSet(object.created_at_unix_nanos)
+        ? globalThis.Number(object.created_at_unix_nanos)
+        : 0,
     };
   },
 
@@ -956,6 +2149,9 @@ export const TApiSandboxMetadata: MessageFns<TApiSandboxMetadata> = {
     if (message.name !== "") {
       obj.name = message.name;
     }
+    if (message.createdAtUnixNanos !== 0) {
+      obj.createdAtUnixNanos = Math.round(message.createdAtUnixNanos);
+    }
     return obj;
   },
 
@@ -972,6 +2168,7 @@ export const TApiSandboxMetadata: MessageFns<TApiSandboxMetadata> = {
       ? TerminalStatus.fromPartial(object.observed)
       : undefined;
     message.name = object.name ?? "";
+    message.createdAtUnixNanos = object.createdAtUnixNanos ?? 0;
     return message;
   },
 };
@@ -2444,523 +3641,6 @@ export const TerminalStatus: MessageFns<TerminalStatus> = {
   },
 };
 
-function createBaseReportObservedStateRequest(): ReportObservedStateRequest {
-  return {
-    operationId: "",
-    sandboxId: "",
-    hostId: "",
-    requestFingerprint: "",
-    fence: undefined,
-    observed: undefined,
-    tenantId: "",
-    template: undefined,
-    lifecycleOperationId: "",
-  };
-}
-
-export const ReportObservedStateRequest: MessageFns<ReportObservedStateRequest> = {
-  encode(message: ReportObservedStateRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.operationId !== "") {
-      writer.uint32(10).string(message.operationId);
-    }
-    if (message.sandboxId !== "") {
-      writer.uint32(18).string(message.sandboxId);
-    }
-    if (message.hostId !== "") {
-      writer.uint32(26).string(message.hostId);
-    }
-    if (message.requestFingerprint !== "") {
-      writer.uint32(34).string(message.requestFingerprint);
-    }
-    if (message.fence !== undefined) {
-      Fence.encode(message.fence, writer.uint32(42).fork()).join();
-    }
-    if (message.observed !== undefined) {
-      TerminalStatus.encode(message.observed, writer.uint32(50).fork()).join();
-    }
-    if (message.tenantId !== "") {
-      writer.uint32(58).string(message.tenantId);
-    }
-    if (message.template !== undefined) {
-      TemplateBinding.encode(message.template, writer.uint32(66).fork()).join();
-    }
-    if (message.lifecycleOperationId !== "") {
-      writer.uint32(74).string(message.lifecycleOperationId);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): ReportObservedStateRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseReportObservedStateRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.operationId = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.sandboxId = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.hostId = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.requestFingerprint = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.fence = Fence.decode(reader, reader.uint32());
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.observed = TerminalStatus.decode(reader, reader.uint32());
-          continue;
-        }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          message.tenantId = reader.string();
-          continue;
-        }
-        case 8: {
-          if (tag !== 66) {
-            break;
-          }
-
-          message.template = TemplateBinding.decode(reader, reader.uint32());
-          continue;
-        }
-        case 9: {
-          if (tag !== 74) {
-            break;
-          }
-
-          message.lifecycleOperationId = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): ReportObservedStateRequest {
-    return {
-      operationId: isSet(object.operationId)
-        ? globalThis.String(object.operationId)
-        : isSet(object.operation_id)
-        ? globalThis.String(object.operation_id)
-        : "",
-      sandboxId: isSet(object.sandboxId)
-        ? globalThis.String(object.sandboxId)
-        : isSet(object.sandbox_id)
-        ? globalThis.String(object.sandbox_id)
-        : "",
-      hostId: isSet(object.hostId)
-        ? globalThis.String(object.hostId)
-        : isSet(object.host_id)
-        ? globalThis.String(object.host_id)
-        : "",
-      requestFingerprint: isSet(object.requestFingerprint)
-        ? globalThis.String(object.requestFingerprint)
-        : isSet(object.request_fingerprint)
-        ? globalThis.String(object.request_fingerprint)
-        : "",
-      fence: isSet(object.fence) ? Fence.fromJSON(object.fence) : undefined,
-      observed: isSet(object.observed) ? TerminalStatus.fromJSON(object.observed) : undefined,
-      tenantId: isSet(object.tenantId)
-        ? globalThis.String(object.tenantId)
-        : isSet(object.tenant_id)
-        ? globalThis.String(object.tenant_id)
-        : "",
-      template: isSet(object.template) ? TemplateBinding.fromJSON(object.template) : undefined,
-      lifecycleOperationId: isSet(object.lifecycleOperationId)
-        ? globalThis.String(object.lifecycleOperationId)
-        : isSet(object.lifecycle_operation_id)
-        ? globalThis.String(object.lifecycle_operation_id)
-        : "",
-    };
-  },
-
-  toJSON(message: ReportObservedStateRequest): unknown {
-    const obj: any = {};
-    if (message.operationId !== "") {
-      obj.operationId = message.operationId;
-    }
-    if (message.sandboxId !== "") {
-      obj.sandboxId = message.sandboxId;
-    }
-    if (message.hostId !== "") {
-      obj.hostId = message.hostId;
-    }
-    if (message.requestFingerprint !== "") {
-      obj.requestFingerprint = message.requestFingerprint;
-    }
-    if (message.fence !== undefined) {
-      obj.fence = Fence.toJSON(message.fence);
-    }
-    if (message.observed !== undefined) {
-      obj.observed = TerminalStatus.toJSON(message.observed);
-    }
-    if (message.tenantId !== "") {
-      obj.tenantId = message.tenantId;
-    }
-    if (message.template !== undefined) {
-      obj.template = TemplateBinding.toJSON(message.template);
-    }
-    if (message.lifecycleOperationId !== "") {
-      obj.lifecycleOperationId = message.lifecycleOperationId;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<ReportObservedStateRequest>): ReportObservedStateRequest {
-    return ReportObservedStateRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<ReportObservedStateRequest>): ReportObservedStateRequest {
-    const message = createBaseReportObservedStateRequest();
-    message.operationId = object.operationId ?? "";
-    message.sandboxId = object.sandboxId ?? "";
-    message.hostId = object.hostId ?? "";
-    message.requestFingerprint = object.requestFingerprint ?? "";
-    message.fence = (object.fence !== undefined && object.fence !== null) ? Fence.fromPartial(object.fence) : undefined;
-    message.observed = (object.observed !== undefined && object.observed !== null)
-      ? TerminalStatus.fromPartial(object.observed)
-      : undefined;
-    message.tenantId = object.tenantId ?? "";
-    message.template = (object.template !== undefined && object.template !== null)
-      ? TemplateBinding.fromPartial(object.template)
-      : undefined;
-    message.lifecycleOperationId = object.lifecycleOperationId ?? "";
-    return message;
-  },
-};
-
-function createBaseReportObservedStateResponse(): ReportObservedStateResponse {
-  return {};
-}
-
-export const ReportObservedStateResponse: MessageFns<ReportObservedStateResponse> = {
-  encode(_: ReportObservedStateResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): ReportObservedStateResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseReportObservedStateResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(_: any): ReportObservedStateResponse {
-    return {};
-  },
-
-  toJSON(_: ReportObservedStateResponse): unknown {
-    const obj: any = {};
-    return obj;
-  },
-
-  create(base?: DeepPartial<ReportObservedStateResponse>): ReportObservedStateResponse {
-    return ReportObservedStateResponse.fromPartial(base ?? {});
-  },
-  fromPartial(_: DeepPartial<ReportObservedStateResponse>): ReportObservedStateResponse {
-    const message = createBaseReportObservedStateResponse();
-    return message;
-  },
-};
-
-function createBaseReportTerminalRequest(): ReportTerminalRequest {
-  return {
-    operationId: "",
-    sandboxId: "",
-    hostId: "",
-    requestFingerprint: "",
-    fence: undefined,
-    terminal: undefined,
-    tenantId: "",
-    template: undefined,
-  };
-}
-
-export const ReportTerminalRequest: MessageFns<ReportTerminalRequest> = {
-  encode(message: ReportTerminalRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.operationId !== "") {
-      writer.uint32(10).string(message.operationId);
-    }
-    if (message.sandboxId !== "") {
-      writer.uint32(18).string(message.sandboxId);
-    }
-    if (message.hostId !== "") {
-      writer.uint32(26).string(message.hostId);
-    }
-    if (message.requestFingerprint !== "") {
-      writer.uint32(34).string(message.requestFingerprint);
-    }
-    if (message.fence !== undefined) {
-      Fence.encode(message.fence, writer.uint32(42).fork()).join();
-    }
-    if (message.terminal !== undefined) {
-      TerminalStatus.encode(message.terminal, writer.uint32(50).fork()).join();
-    }
-    if (message.tenantId !== "") {
-      writer.uint32(58).string(message.tenantId);
-    }
-    if (message.template !== undefined) {
-      TemplateBinding.encode(message.template, writer.uint32(66).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): ReportTerminalRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseReportTerminalRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.operationId = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.sandboxId = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.hostId = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.requestFingerprint = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.fence = Fence.decode(reader, reader.uint32());
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.terminal = TerminalStatus.decode(reader, reader.uint32());
-          continue;
-        }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          message.tenantId = reader.string();
-          continue;
-        }
-        case 8: {
-          if (tag !== 66) {
-            break;
-          }
-
-          message.template = TemplateBinding.decode(reader, reader.uint32());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): ReportTerminalRequest {
-    return {
-      operationId: isSet(object.operationId)
-        ? globalThis.String(object.operationId)
-        : isSet(object.operation_id)
-        ? globalThis.String(object.operation_id)
-        : "",
-      sandboxId: isSet(object.sandboxId)
-        ? globalThis.String(object.sandboxId)
-        : isSet(object.sandbox_id)
-        ? globalThis.String(object.sandbox_id)
-        : "",
-      hostId: isSet(object.hostId)
-        ? globalThis.String(object.hostId)
-        : isSet(object.host_id)
-        ? globalThis.String(object.host_id)
-        : "",
-      requestFingerprint: isSet(object.requestFingerprint)
-        ? globalThis.String(object.requestFingerprint)
-        : isSet(object.request_fingerprint)
-        ? globalThis.String(object.request_fingerprint)
-        : "",
-      fence: isSet(object.fence) ? Fence.fromJSON(object.fence) : undefined,
-      terminal: isSet(object.terminal) ? TerminalStatus.fromJSON(object.terminal) : undefined,
-      tenantId: isSet(object.tenantId)
-        ? globalThis.String(object.tenantId)
-        : isSet(object.tenant_id)
-        ? globalThis.String(object.tenant_id)
-        : "",
-      template: isSet(object.template) ? TemplateBinding.fromJSON(object.template) : undefined,
-    };
-  },
-
-  toJSON(message: ReportTerminalRequest): unknown {
-    const obj: any = {};
-    if (message.operationId !== "") {
-      obj.operationId = message.operationId;
-    }
-    if (message.sandboxId !== "") {
-      obj.sandboxId = message.sandboxId;
-    }
-    if (message.hostId !== "") {
-      obj.hostId = message.hostId;
-    }
-    if (message.requestFingerprint !== "") {
-      obj.requestFingerprint = message.requestFingerprint;
-    }
-    if (message.fence !== undefined) {
-      obj.fence = Fence.toJSON(message.fence);
-    }
-    if (message.terminal !== undefined) {
-      obj.terminal = TerminalStatus.toJSON(message.terminal);
-    }
-    if (message.tenantId !== "") {
-      obj.tenantId = message.tenantId;
-    }
-    if (message.template !== undefined) {
-      obj.template = TemplateBinding.toJSON(message.template);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<ReportTerminalRequest>): ReportTerminalRequest {
-    return ReportTerminalRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<ReportTerminalRequest>): ReportTerminalRequest {
-    const message = createBaseReportTerminalRequest();
-    message.operationId = object.operationId ?? "";
-    message.sandboxId = object.sandboxId ?? "";
-    message.hostId = object.hostId ?? "";
-    message.requestFingerprint = object.requestFingerprint ?? "";
-    message.fence = (object.fence !== undefined && object.fence !== null) ? Fence.fromPartial(object.fence) : undefined;
-    message.terminal = (object.terminal !== undefined && object.terminal !== null)
-      ? TerminalStatus.fromPartial(object.terminal)
-      : undefined;
-    message.tenantId = object.tenantId ?? "";
-    message.template = (object.template !== undefined && object.template !== null)
-      ? TemplateBinding.fromPartial(object.template)
-      : undefined;
-    return message;
-  },
-};
-
-function createBaseReportTerminalResponse(): ReportTerminalResponse {
-  return {};
-}
-
-export const ReportTerminalResponse: MessageFns<ReportTerminalResponse> = {
-  encode(_: ReportTerminalResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): ReportTerminalResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseReportTerminalResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(_: any): ReportTerminalResponse {
-    return {};
-  },
-
-  toJSON(_: ReportTerminalResponse): unknown {
-    const obj: any = {};
-    return obj;
-  },
-
-  create(base?: DeepPartial<ReportTerminalResponse>): ReportTerminalResponse {
-    return ReportTerminalResponse.fromPartial(base ?? {});
-  },
-  fromPartial(_: DeepPartial<ReportTerminalResponse>): ReportTerminalResponse {
-    const message = createBaseReportTerminalResponse();
-    return message;
-  },
-};
-
 function createBasePreviewInfo(): PreviewInfo {
   return { record: undefined, url: "" };
 }
@@ -3737,6 +4417,476 @@ export const TApiListOrganizationsResponse: MessageFns<TApiListOrganizationsResp
   },
 };
 
+function createBaseTApiListTemplatesRequest(): TApiListTemplatesRequest {
+  return { apiKey: "" };
+}
+
+export const TApiListTemplatesRequest: MessageFns<TApiListTemplatesRequest> = {
+  encode(message: TApiListTemplatesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListTemplatesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListTemplatesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListTemplatesRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiListTemplatesRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListTemplatesRequest>): TApiListTemplatesRequest {
+    return TApiListTemplatesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListTemplatesRequest>): TApiListTemplatesRequest {
+    const message = createBaseTApiListTemplatesRequest();
+    message.apiKey = object.apiKey ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiListTemplatesResponse(): TApiListTemplatesResponse {
+  return { templates: [] };
+}
+
+export const TApiListTemplatesResponse: MessageFns<TApiListTemplatesResponse> = {
+  encode(message: TApiListTemplatesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.templates) {
+      TApiTemplate.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListTemplatesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListTemplatesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.templates.push(TApiTemplate.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListTemplatesResponse {
+    return {
+      templates: globalThis.Array.isArray(object?.templates)
+        ? object.templates.map((e: any) => TApiTemplate.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TApiListTemplatesResponse): unknown {
+    const obj: any = {};
+    if (message.templates?.length) {
+      obj.templates = message.templates.map((e) => TApiTemplate.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListTemplatesResponse>): TApiListTemplatesResponse {
+    return TApiListTemplatesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListTemplatesResponse>): TApiListTemplatesResponse {
+    const message = createBaseTApiListTemplatesResponse();
+    message.templates = object.templates?.map((e) => TApiTemplate.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseTApiTemplate(): TApiTemplate {
+  return { templateId: "", version: "", digest: "", isDefault: false, metadata: undefined };
+}
+
+export const TApiTemplate: MessageFns<TApiTemplate> = {
+  encode(message: TApiTemplate, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.templateId !== "") {
+      writer.uint32(10).string(message.templateId);
+    }
+    if (message.version !== "") {
+      writer.uint32(18).string(message.version);
+    }
+    if (message.digest !== "") {
+      writer.uint32(26).string(message.digest);
+    }
+    if (message.isDefault !== false) {
+      writer.uint32(32).bool(message.isDefault);
+    }
+    if (message.metadata !== undefined) {
+      TApiTemplateMetadata.encode(message.metadata, writer.uint32(42).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiTemplate {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiTemplate();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.templateId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.version = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.digest = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.isDefault = reader.bool();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.metadata = TApiTemplateMetadata.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiTemplate {
+    return {
+      templateId: isSet(object.templateId)
+        ? globalThis.String(object.templateId)
+        : isSet(object.template_id)
+        ? globalThis.String(object.template_id)
+        : "",
+      version: isSet(object.version) ? globalThis.String(object.version) : "",
+      digest: isSet(object.digest) ? globalThis.String(object.digest) : "",
+      isDefault: isSet(object.isDefault)
+        ? globalThis.Boolean(object.isDefault)
+        : isSet(object.is_default)
+        ? globalThis.Boolean(object.is_default)
+        : false,
+      metadata: isSet(object.metadata) ? TApiTemplateMetadata.fromJSON(object.metadata) : undefined,
+    };
+  },
+
+  toJSON(message: TApiTemplate): unknown {
+    const obj: any = {};
+    if (message.templateId !== "") {
+      obj.templateId = message.templateId;
+    }
+    if (message.version !== "") {
+      obj.version = message.version;
+    }
+    if (message.digest !== "") {
+      obj.digest = message.digest;
+    }
+    if (message.isDefault !== false) {
+      obj.isDefault = message.isDefault;
+    }
+    if (message.metadata !== undefined) {
+      obj.metadata = TApiTemplateMetadata.toJSON(message.metadata);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiTemplate>): TApiTemplate {
+    return TApiTemplate.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiTemplate>): TApiTemplate {
+    const message = createBaseTApiTemplate();
+    message.templateId = object.templateId ?? "";
+    message.version = object.version ?? "";
+    message.digest = object.digest ?? "";
+    message.isDefault = object.isDefault ?? false;
+    message.metadata = (object.metadata !== undefined && object.metadata !== null)
+      ? TApiTemplateMetadata.fromPartial(object.metadata)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiTemplateMetadata(): TApiTemplateMetadata {
+  return { description: "", os: "", osVersion: "", stacks: [], agentCliSupport: [] };
+}
+
+export const TApiTemplateMetadata: MessageFns<TApiTemplateMetadata> = {
+  encode(message: TApiTemplateMetadata, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.description !== "") {
+      writer.uint32(10).string(message.description);
+    }
+    if (message.os !== "") {
+      writer.uint32(18).string(message.os);
+    }
+    if (message.osVersion !== "") {
+      writer.uint32(26).string(message.osVersion);
+    }
+    for (const v of message.stacks) {
+      TApiTemplateStack.encode(v!, writer.uint32(34).fork()).join();
+    }
+    for (const v of message.agentCliSupport) {
+      writer.uint32(42).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiTemplateMetadata {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiTemplateMetadata();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.description = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.os = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.osVersion = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.stacks.push(TApiTemplateStack.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.agentCliSupport.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiTemplateMetadata {
+    return {
+      description: isSet(object.description) ? globalThis.String(object.description) : "",
+      os: isSet(object.os) ? globalThis.String(object.os) : "",
+      osVersion: isSet(object.osVersion)
+        ? globalThis.String(object.osVersion)
+        : isSet(object.os_version)
+        ? globalThis.String(object.os_version)
+        : "",
+      stacks: globalThis.Array.isArray(object?.stacks)
+        ? object.stacks.map((e: any) => TApiTemplateStack.fromJSON(e))
+        : [],
+      agentCliSupport: globalThis.Array.isArray(object?.agentCliSupport)
+        ? object.agentCliSupport.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.agent_cli_support)
+        ? object.agent_cli_support.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TApiTemplateMetadata): unknown {
+    const obj: any = {};
+    if (message.description !== "") {
+      obj.description = message.description;
+    }
+    if (message.os !== "") {
+      obj.os = message.os;
+    }
+    if (message.osVersion !== "") {
+      obj.osVersion = message.osVersion;
+    }
+    if (message.stacks?.length) {
+      obj.stacks = message.stacks.map((e) => TApiTemplateStack.toJSON(e));
+    }
+    if (message.agentCliSupport?.length) {
+      obj.agentCliSupport = message.agentCliSupport;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiTemplateMetadata>): TApiTemplateMetadata {
+    return TApiTemplateMetadata.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiTemplateMetadata>): TApiTemplateMetadata {
+    const message = createBaseTApiTemplateMetadata();
+    message.description = object.description ?? "";
+    message.os = object.os ?? "";
+    message.osVersion = object.osVersion ?? "";
+    message.stacks = object.stacks?.map((e) => TApiTemplateStack.fromPartial(e)) || [];
+    message.agentCliSupport = object.agentCliSupport?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseTApiTemplateStack(): TApiTemplateStack {
+  return { name: "", version: "" };
+}
+
+export const TApiTemplateStack: MessageFns<TApiTemplateStack> = {
+  encode(message: TApiTemplateStack, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.version !== "") {
+      writer.uint32(18).string(message.version);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiTemplateStack {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiTemplateStack();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.version = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiTemplateStack {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      version: isSet(object.version) ? globalThis.String(object.version) : "",
+    };
+  },
+
+  toJSON(message: TApiTemplateStack): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.version !== "") {
+      obj.version = message.version;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiTemplateStack>): TApiTemplateStack {
+    return TApiTemplateStack.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiTemplateStack>): TApiTemplateStack {
+    const message = createBaseTApiTemplateStack();
+    message.name = object.name ?? "";
+    message.version = object.version ?? "";
+    return message;
+  },
+};
+
 function createBaseTApiOrganization(): TApiOrganization {
   return { organizationId: "", name: "", personal: false, role: "", createdAtUnixNanos: 0 };
 }
@@ -3865,6 +5015,8377 @@ export const TApiOrganization: MessageFns<TApiOrganization> = {
     message.personal = object.personal ?? false;
     message.role = object.role ?? "";
     message.createdAtUnixNanos = object.createdAtUnixNanos ?? 0;
+    return message;
+  },
+};
+
+function createBaseTApiGetOrganizationBillingRequest(): TApiGetOrganizationBillingRequest {
+  return { apiKey: "", organizationId: "", fromUnixNanos: 0, toUnixNanos: 0 };
+}
+
+export const TApiGetOrganizationBillingRequest: MessageFns<TApiGetOrganizationBillingRequest> = {
+  encode(message: TApiGetOrganizationBillingRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.organizationId !== "") {
+      writer.uint32(18).string(message.organizationId);
+    }
+    if (message.fromUnixNanos !== 0) {
+      writer.uint32(24).int64(message.fromUnixNanos);
+    }
+    if (message.toUnixNanos !== 0) {
+      writer.uint32(32).int64(message.toUnixNanos);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetOrganizationBillingRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetOrganizationBillingRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.organizationId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.fromUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.toUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetOrganizationBillingRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      organizationId: isSet(object.organizationId)
+        ? globalThis.String(object.organizationId)
+        : isSet(object.organization_id)
+        ? globalThis.String(object.organization_id)
+        : "",
+      fromUnixNanos: isSet(object.fromUnixNanos)
+        ? globalThis.Number(object.fromUnixNanos)
+        : isSet(object.from_unix_nanos)
+        ? globalThis.Number(object.from_unix_nanos)
+        : 0,
+      toUnixNanos: isSet(object.toUnixNanos)
+        ? globalThis.Number(object.toUnixNanos)
+        : isSet(object.to_unix_nanos)
+        ? globalThis.Number(object.to_unix_nanos)
+        : 0,
+    };
+  },
+
+  toJSON(message: TApiGetOrganizationBillingRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.organizationId !== "") {
+      obj.organizationId = message.organizationId;
+    }
+    if (message.fromUnixNanos !== 0) {
+      obj.fromUnixNanos = Math.round(message.fromUnixNanos);
+    }
+    if (message.toUnixNanos !== 0) {
+      obj.toUnixNanos = Math.round(message.toUnixNanos);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetOrganizationBillingRequest>): TApiGetOrganizationBillingRequest {
+    return TApiGetOrganizationBillingRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiGetOrganizationBillingRequest>): TApiGetOrganizationBillingRequest {
+    const message = createBaseTApiGetOrganizationBillingRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.organizationId = object.organizationId ?? "";
+    message.fromUnixNanos = object.fromUnixNanos ?? 0;
+    message.toUnixNanos = object.toUnixNanos ?? 0;
+    return message;
+  },
+};
+
+function createBaseTApiGetOrganizationBillingResponse(): TApiGetOrganizationBillingResponse {
+  return { computeSeconds: 0, storageHours: 0, members: [], creditBalance: 0, blocked: false };
+}
+
+export const TApiGetOrganizationBillingResponse: MessageFns<TApiGetOrganizationBillingResponse> = {
+  encode(message: TApiGetOrganizationBillingResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.computeSeconds !== 0) {
+      writer.uint32(9).double(message.computeSeconds);
+    }
+    if (message.storageHours !== 0) {
+      writer.uint32(17).double(message.storageHours);
+    }
+    for (const v of message.members) {
+      TApiMemberUsage.encode(v!, writer.uint32(26).fork()).join();
+    }
+    if (message.creditBalance !== 0) {
+      writer.uint32(33).double(message.creditBalance);
+    }
+    if (message.blocked !== false) {
+      writer.uint32(40).bool(message.blocked);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetOrganizationBillingResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetOrganizationBillingResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 9) {
+            break;
+          }
+
+          message.computeSeconds = reader.double();
+          continue;
+        }
+        case 2: {
+          if (tag !== 17) {
+            break;
+          }
+
+          message.storageHours = reader.double();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.members.push(TApiMemberUsage.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 4: {
+          if (tag !== 33) {
+            break;
+          }
+
+          message.creditBalance = reader.double();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.blocked = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetOrganizationBillingResponse {
+    return {
+      computeSeconds: isSet(object.computeSeconds)
+        ? globalThis.Number(object.computeSeconds)
+        : isSet(object.compute_seconds)
+        ? globalThis.Number(object.compute_seconds)
+        : 0,
+      storageHours: isSet(object.storageHours)
+        ? globalThis.Number(object.storageHours)
+        : isSet(object.storage_hours)
+        ? globalThis.Number(object.storage_hours)
+        : 0,
+      members: globalThis.Array.isArray(object?.members)
+        ? object.members.map((e: any) => TApiMemberUsage.fromJSON(e))
+        : [],
+      creditBalance: isSet(object.creditBalance)
+        ? globalThis.Number(object.creditBalance)
+        : isSet(object.credit_balance)
+        ? globalThis.Number(object.credit_balance)
+        : 0,
+      blocked: isSet(object.blocked) ? globalThis.Boolean(object.blocked) : false,
+    };
+  },
+
+  toJSON(message: TApiGetOrganizationBillingResponse): unknown {
+    const obj: any = {};
+    if (message.computeSeconds !== 0) {
+      obj.computeSeconds = message.computeSeconds;
+    }
+    if (message.storageHours !== 0) {
+      obj.storageHours = message.storageHours;
+    }
+    if (message.members?.length) {
+      obj.members = message.members.map((e) => TApiMemberUsage.toJSON(e));
+    }
+    if (message.creditBalance !== 0) {
+      obj.creditBalance = message.creditBalance;
+    }
+    if (message.blocked !== false) {
+      obj.blocked = message.blocked;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetOrganizationBillingResponse>): TApiGetOrganizationBillingResponse {
+    return TApiGetOrganizationBillingResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiGetOrganizationBillingResponse>): TApiGetOrganizationBillingResponse {
+    const message = createBaseTApiGetOrganizationBillingResponse();
+    message.computeSeconds = object.computeSeconds ?? 0;
+    message.storageHours = object.storageHours ?? 0;
+    message.members = object.members?.map((e) => TApiMemberUsage.fromPartial(e)) || [];
+    message.creditBalance = object.creditBalance ?? 0;
+    message.blocked = object.blocked ?? false;
+    return message;
+  },
+};
+
+function createBaseTApiMemberUsage(): TApiMemberUsage {
+  return { userId: "", computeSeconds: 0, storageHours: 0 };
+}
+
+export const TApiMemberUsage: MessageFns<TApiMemberUsage> = {
+  encode(message: TApiMemberUsage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== "") {
+      writer.uint32(10).string(message.userId);
+    }
+    if (message.computeSeconds !== 0) {
+      writer.uint32(17).double(message.computeSeconds);
+    }
+    if (message.storageHours !== 0) {
+      writer.uint32(25).double(message.storageHours);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiMemberUsage {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiMemberUsage();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.userId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 17) {
+            break;
+          }
+
+          message.computeSeconds = reader.double();
+          continue;
+        }
+        case 3: {
+          if (tag !== 25) {
+            break;
+          }
+
+          message.storageHours = reader.double();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiMemberUsage {
+    return {
+      userId: isSet(object.userId)
+        ? globalThis.String(object.userId)
+        : isSet(object.user_id)
+        ? globalThis.String(object.user_id)
+        : "",
+      computeSeconds: isSet(object.computeSeconds)
+        ? globalThis.Number(object.computeSeconds)
+        : isSet(object.compute_seconds)
+        ? globalThis.Number(object.compute_seconds)
+        : 0,
+      storageHours: isSet(object.storageHours)
+        ? globalThis.Number(object.storageHours)
+        : isSet(object.storage_hours)
+        ? globalThis.Number(object.storage_hours)
+        : 0,
+    };
+  },
+
+  toJSON(message: TApiMemberUsage): unknown {
+    const obj: any = {};
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    if (message.computeSeconds !== 0) {
+      obj.computeSeconds = message.computeSeconds;
+    }
+    if (message.storageHours !== 0) {
+      obj.storageHours = message.storageHours;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiMemberUsage>): TApiMemberUsage {
+    return TApiMemberUsage.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiMemberUsage>): TApiMemberUsage {
+    const message = createBaseTApiMemberUsage();
+    message.userId = object.userId ?? "";
+    message.computeSeconds = object.computeSeconds ?? 0;
+    message.storageHours = object.storageHours ?? 0;
+    return message;
+  },
+};
+
+function createBaseTApiListOrganizationTopUpOffersRequest(): TApiListOrganizationTopUpOffersRequest {
+  return { apiKey: "", organizationId: "" };
+}
+
+export const TApiListOrganizationTopUpOffersRequest: MessageFns<TApiListOrganizationTopUpOffersRequest> = {
+  encode(message: TApiListOrganizationTopUpOffersRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.organizationId !== "") {
+      writer.uint32(18).string(message.organizationId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListOrganizationTopUpOffersRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListOrganizationTopUpOffersRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.organizationId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListOrganizationTopUpOffersRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      organizationId: isSet(object.organizationId)
+        ? globalThis.String(object.organizationId)
+        : isSet(object.organization_id)
+        ? globalThis.String(object.organization_id)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiListOrganizationTopUpOffersRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.organizationId !== "") {
+      obj.organizationId = message.organizationId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListOrganizationTopUpOffersRequest>): TApiListOrganizationTopUpOffersRequest {
+    return TApiListOrganizationTopUpOffersRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListOrganizationTopUpOffersRequest>): TApiListOrganizationTopUpOffersRequest {
+    const message = createBaseTApiListOrganizationTopUpOffersRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.organizationId = object.organizationId ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiListOrganizationTopUpOffersResponse(): TApiListOrganizationTopUpOffersResponse {
+  return { offers: [] };
+}
+
+export const TApiListOrganizationTopUpOffersResponse: MessageFns<TApiListOrganizationTopUpOffersResponse> = {
+  encode(message: TApiListOrganizationTopUpOffersResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.offers) {
+      TApiTopUpOffer.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListOrganizationTopUpOffersResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListOrganizationTopUpOffersResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.offers.push(TApiTopUpOffer.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListOrganizationTopUpOffersResponse {
+    return {
+      offers: globalThis.Array.isArray(object?.offers) ? object.offers.map((e: any) => TApiTopUpOffer.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: TApiListOrganizationTopUpOffersResponse): unknown {
+    const obj: any = {};
+    if (message.offers?.length) {
+      obj.offers = message.offers.map((e) => TApiTopUpOffer.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListOrganizationTopUpOffersResponse>): TApiListOrganizationTopUpOffersResponse {
+    return TApiListOrganizationTopUpOffersResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListOrganizationTopUpOffersResponse>): TApiListOrganizationTopUpOffersResponse {
+    const message = createBaseTApiListOrganizationTopUpOffersResponse();
+    message.offers = object.offers?.map((e) => TApiTopUpOffer.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseTApiTopUpOffer(): TApiTopUpOffer {
+  return { code: "", name: "", amountCents: 0, currency: "" };
+}
+
+export const TApiTopUpOffer: MessageFns<TApiTopUpOffer> = {
+  encode(message: TApiTopUpOffer, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.code !== "") {
+      writer.uint32(10).string(message.code);
+    }
+    if (message.name !== "") {
+      writer.uint32(18).string(message.name);
+    }
+    if (message.amountCents !== 0) {
+      writer.uint32(24).int64(message.amountCents);
+    }
+    if (message.currency !== "") {
+      writer.uint32(34).string(message.currency);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiTopUpOffer {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiTopUpOffer();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.code = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.amountCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.currency = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiTopUpOffer {
+    return {
+      code: isSet(object.code) ? globalThis.String(object.code) : "",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      amountCents: isSet(object.amountCents)
+        ? globalThis.Number(object.amountCents)
+        : isSet(object.amount_cents)
+        ? globalThis.Number(object.amount_cents)
+        : 0,
+      currency: isSet(object.currency) ? globalThis.String(object.currency) : "",
+    };
+  },
+
+  toJSON(message: TApiTopUpOffer): unknown {
+    const obj: any = {};
+    if (message.code !== "") {
+      obj.code = message.code;
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.amountCents !== 0) {
+      obj.amountCents = Math.round(message.amountCents);
+    }
+    if (message.currency !== "") {
+      obj.currency = message.currency;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiTopUpOffer>): TApiTopUpOffer {
+    return TApiTopUpOffer.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiTopUpOffer>): TApiTopUpOffer {
+    const message = createBaseTApiTopUpOffer();
+    message.code = object.code ?? "";
+    message.name = object.name ?? "";
+    message.amountCents = object.amountCents ?? 0;
+    message.currency = object.currency ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiStartOrganizationTopUpPurchaseRequest(): TApiStartOrganizationTopUpPurchaseRequest {
+  return { apiKey: "", organizationId: "", offerCode: "", idempotencyKey: "", amountCents: undefined };
+}
+
+export const TApiStartOrganizationTopUpPurchaseRequest: MessageFns<TApiStartOrganizationTopUpPurchaseRequest> = {
+  encode(message: TApiStartOrganizationTopUpPurchaseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.organizationId !== "") {
+      writer.uint32(18).string(message.organizationId);
+    }
+    if (message.offerCode !== "") {
+      writer.uint32(26).string(message.offerCode);
+    }
+    if (message.idempotencyKey !== "") {
+      writer.uint32(34).string(message.idempotencyKey);
+    }
+    if (message.amountCents !== undefined) {
+      writer.uint32(40).int64(message.amountCents);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiStartOrganizationTopUpPurchaseRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiStartOrganizationTopUpPurchaseRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.organizationId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.offerCode = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.idempotencyKey = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.amountCents = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiStartOrganizationTopUpPurchaseRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      organizationId: isSet(object.organizationId)
+        ? globalThis.String(object.organizationId)
+        : isSet(object.organization_id)
+        ? globalThis.String(object.organization_id)
+        : "",
+      offerCode: isSet(object.offerCode)
+        ? globalThis.String(object.offerCode)
+        : isSet(object.offer_code)
+        ? globalThis.String(object.offer_code)
+        : "",
+      idempotencyKey: isSet(object.idempotencyKey)
+        ? globalThis.String(object.idempotencyKey)
+        : isSet(object.idempotency_key)
+        ? globalThis.String(object.idempotency_key)
+        : "",
+      amountCents: isSet(object.amountCents)
+        ? globalThis.Number(object.amountCents)
+        : isSet(object.amount_cents)
+        ? globalThis.Number(object.amount_cents)
+        : undefined,
+    };
+  },
+
+  toJSON(message: TApiStartOrganizationTopUpPurchaseRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.organizationId !== "") {
+      obj.organizationId = message.organizationId;
+    }
+    if (message.offerCode !== "") {
+      obj.offerCode = message.offerCode;
+    }
+    if (message.idempotencyKey !== "") {
+      obj.idempotencyKey = message.idempotencyKey;
+    }
+    if (message.amountCents !== undefined) {
+      obj.amountCents = Math.round(message.amountCents);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiStartOrganizationTopUpPurchaseRequest>): TApiStartOrganizationTopUpPurchaseRequest {
+    return TApiStartOrganizationTopUpPurchaseRequest.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<TApiStartOrganizationTopUpPurchaseRequest>,
+  ): TApiStartOrganizationTopUpPurchaseRequest {
+    const message = createBaseTApiStartOrganizationTopUpPurchaseRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.organizationId = object.organizationId ?? "";
+    message.offerCode = object.offerCode ?? "";
+    message.idempotencyKey = object.idempotencyKey ?? "";
+    message.amountCents = object.amountCents ?? undefined;
+    return message;
+  },
+};
+
+function createBaseTApiStartOrganizationTopUpPurchaseResponse(): TApiStartOrganizationTopUpPurchaseResponse {
+  return { offerCode: "", amountCents: 0, currency: "", status: "", paymentUrl: "" };
+}
+
+export const TApiStartOrganizationTopUpPurchaseResponse: MessageFns<TApiStartOrganizationTopUpPurchaseResponse> = {
+  encode(message: TApiStartOrganizationTopUpPurchaseResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.offerCode !== "") {
+      writer.uint32(10).string(message.offerCode);
+    }
+    if (message.amountCents !== 0) {
+      writer.uint32(16).int64(message.amountCents);
+    }
+    if (message.currency !== "") {
+      writer.uint32(26).string(message.currency);
+    }
+    if (message.status !== "") {
+      writer.uint32(34).string(message.status);
+    }
+    if (message.paymentUrl !== "") {
+      writer.uint32(42).string(message.paymentUrl);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiStartOrganizationTopUpPurchaseResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiStartOrganizationTopUpPurchaseResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.offerCode = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.amountCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.currency = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.status = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.paymentUrl = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiStartOrganizationTopUpPurchaseResponse {
+    return {
+      offerCode: isSet(object.offerCode)
+        ? globalThis.String(object.offerCode)
+        : isSet(object.offer_code)
+        ? globalThis.String(object.offer_code)
+        : "",
+      amountCents: isSet(object.amountCents)
+        ? globalThis.Number(object.amountCents)
+        : isSet(object.amount_cents)
+        ? globalThis.Number(object.amount_cents)
+        : 0,
+      currency: isSet(object.currency) ? globalThis.String(object.currency) : "",
+      status: isSet(object.status) ? globalThis.String(object.status) : "",
+      paymentUrl: isSet(object.paymentUrl)
+        ? globalThis.String(object.paymentUrl)
+        : isSet(object.payment_url)
+        ? globalThis.String(object.payment_url)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiStartOrganizationTopUpPurchaseResponse): unknown {
+    const obj: any = {};
+    if (message.offerCode !== "") {
+      obj.offerCode = message.offerCode;
+    }
+    if (message.amountCents !== 0) {
+      obj.amountCents = Math.round(message.amountCents);
+    }
+    if (message.currency !== "") {
+      obj.currency = message.currency;
+    }
+    if (message.status !== "") {
+      obj.status = message.status;
+    }
+    if (message.paymentUrl !== "") {
+      obj.paymentUrl = message.paymentUrl;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiStartOrganizationTopUpPurchaseResponse>): TApiStartOrganizationTopUpPurchaseResponse {
+    return TApiStartOrganizationTopUpPurchaseResponse.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<TApiStartOrganizationTopUpPurchaseResponse>,
+  ): TApiStartOrganizationTopUpPurchaseResponse {
+    const message = createBaseTApiStartOrganizationTopUpPurchaseResponse();
+    message.offerCode = object.offerCode ?? "";
+    message.amountCents = object.amountCents ?? 0;
+    message.currency = object.currency ?? "";
+    message.status = object.status ?? "";
+    message.paymentUrl = object.paymentUrl ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiApplyOrganizationCouponRequest(): TApiApplyOrganizationCouponRequest {
+  return { apiKey: "", organizationId: "", couponCode: "" };
+}
+
+export const TApiApplyOrganizationCouponRequest: MessageFns<TApiApplyOrganizationCouponRequest> = {
+  encode(message: TApiApplyOrganizationCouponRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.organizationId !== "") {
+      writer.uint32(18).string(message.organizationId);
+    }
+    if (message.couponCode !== "") {
+      writer.uint32(26).string(message.couponCode);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiApplyOrganizationCouponRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiApplyOrganizationCouponRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.organizationId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.couponCode = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiApplyOrganizationCouponRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      organizationId: isSet(object.organizationId)
+        ? globalThis.String(object.organizationId)
+        : isSet(object.organization_id)
+        ? globalThis.String(object.organization_id)
+        : "",
+      couponCode: isSet(object.couponCode)
+        ? globalThis.String(object.couponCode)
+        : isSet(object.coupon_code)
+        ? globalThis.String(object.coupon_code)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiApplyOrganizationCouponRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.organizationId !== "") {
+      obj.organizationId = message.organizationId;
+    }
+    if (message.couponCode !== "") {
+      obj.couponCode = message.couponCode;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiApplyOrganizationCouponRequest>): TApiApplyOrganizationCouponRequest {
+    return TApiApplyOrganizationCouponRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiApplyOrganizationCouponRequest>): TApiApplyOrganizationCouponRequest {
+    const message = createBaseTApiApplyOrganizationCouponRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.organizationId = object.organizationId ?? "";
+    message.couponCode = object.couponCode ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiApplyOrganizationCouponResponse(): TApiApplyOrganizationCouponResponse {
+  return { coupon: undefined };
+}
+
+export const TApiApplyOrganizationCouponResponse: MessageFns<TApiApplyOrganizationCouponResponse> = {
+  encode(message: TApiApplyOrganizationCouponResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.coupon !== undefined) {
+      TApiCoupon.encode(message.coupon, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiApplyOrganizationCouponResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiApplyOrganizationCouponResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.coupon = TApiCoupon.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiApplyOrganizationCouponResponse {
+    return { coupon: isSet(object.coupon) ? TApiCoupon.fromJSON(object.coupon) : undefined };
+  },
+
+  toJSON(message: TApiApplyOrganizationCouponResponse): unknown {
+    const obj: any = {};
+    if (message.coupon !== undefined) {
+      obj.coupon = TApiCoupon.toJSON(message.coupon);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiApplyOrganizationCouponResponse>): TApiApplyOrganizationCouponResponse {
+    return TApiApplyOrganizationCouponResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiApplyOrganizationCouponResponse>): TApiApplyOrganizationCouponResponse {
+    const message = createBaseTApiApplyOrganizationCouponResponse();
+    message.coupon = (object.coupon !== undefined && object.coupon !== null)
+      ? TApiCoupon.fromPartial(object.coupon)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiListOrganizationCouponsRequest(): TApiListOrganizationCouponsRequest {
+  return { apiKey: "", organizationId: "" };
+}
+
+export const TApiListOrganizationCouponsRequest: MessageFns<TApiListOrganizationCouponsRequest> = {
+  encode(message: TApiListOrganizationCouponsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.organizationId !== "") {
+      writer.uint32(18).string(message.organizationId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListOrganizationCouponsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListOrganizationCouponsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.organizationId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListOrganizationCouponsRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      organizationId: isSet(object.organizationId)
+        ? globalThis.String(object.organizationId)
+        : isSet(object.organization_id)
+        ? globalThis.String(object.organization_id)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiListOrganizationCouponsRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.organizationId !== "") {
+      obj.organizationId = message.organizationId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListOrganizationCouponsRequest>): TApiListOrganizationCouponsRequest {
+    return TApiListOrganizationCouponsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListOrganizationCouponsRequest>): TApiListOrganizationCouponsRequest {
+    const message = createBaseTApiListOrganizationCouponsRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.organizationId = object.organizationId ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiListOrganizationCouponsResponse(): TApiListOrganizationCouponsResponse {
+  return { coupons: [] };
+}
+
+export const TApiListOrganizationCouponsResponse: MessageFns<TApiListOrganizationCouponsResponse> = {
+  encode(message: TApiListOrganizationCouponsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.coupons) {
+      TApiCoupon.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListOrganizationCouponsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListOrganizationCouponsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.coupons.push(TApiCoupon.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListOrganizationCouponsResponse {
+    return {
+      coupons: globalThis.Array.isArray(object?.coupons) ? object.coupons.map((e: any) => TApiCoupon.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: TApiListOrganizationCouponsResponse): unknown {
+    const obj: any = {};
+    if (message.coupons?.length) {
+      obj.coupons = message.coupons.map((e) => TApiCoupon.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListOrganizationCouponsResponse>): TApiListOrganizationCouponsResponse {
+    return TApiListOrganizationCouponsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListOrganizationCouponsResponse>): TApiListOrganizationCouponsResponse {
+    const message = createBaseTApiListOrganizationCouponsResponse();
+    message.coupons = object.coupons?.map((e) => TApiCoupon.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseTApiCoupon(): TApiCoupon {
+  return {
+    id: "",
+    code: "",
+    name: "",
+    status: "",
+    amountCents: 0,
+    amountCentsRemaining: 0,
+    currency: "",
+    percentageRate: 0,
+    frequency: "",
+    frequencyRemaining: 0,
+    expiresAtUnixNanos: 0,
+  };
+}
+
+export const TApiCoupon: MessageFns<TApiCoupon> = {
+  encode(message: TApiCoupon, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
+    }
+    if (message.code !== "") {
+      writer.uint32(18).string(message.code);
+    }
+    if (message.name !== "") {
+      writer.uint32(26).string(message.name);
+    }
+    if (message.status !== "") {
+      writer.uint32(34).string(message.status);
+    }
+    if (message.amountCents !== 0) {
+      writer.uint32(40).int64(message.amountCents);
+    }
+    if (message.amountCentsRemaining !== 0) {
+      writer.uint32(48).int64(message.amountCentsRemaining);
+    }
+    if (message.currency !== "") {
+      writer.uint32(58).string(message.currency);
+    }
+    if (message.percentageRate !== 0) {
+      writer.uint32(65).double(message.percentageRate);
+    }
+    if (message.frequency !== "") {
+      writer.uint32(74).string(message.frequency);
+    }
+    if (message.frequencyRemaining !== 0) {
+      writer.uint32(80).int32(message.frequencyRemaining);
+    }
+    if (message.expiresAtUnixNanos !== 0) {
+      writer.uint32(88).int64(message.expiresAtUnixNanos);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiCoupon {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiCoupon();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.id = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.code = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.status = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.amountCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.amountCentsRemaining = longToNumber(reader.int64());
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.currency = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 65) {
+            break;
+          }
+
+          message.percentageRate = reader.double();
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.frequency = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.frequencyRemaining = reader.int32();
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.expiresAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiCoupon {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "",
+      code: isSet(object.code) ? globalThis.String(object.code) : "",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      status: isSet(object.status) ? globalThis.String(object.status) : "",
+      amountCents: isSet(object.amountCents)
+        ? globalThis.Number(object.amountCents)
+        : isSet(object.amount_cents)
+        ? globalThis.Number(object.amount_cents)
+        : 0,
+      amountCentsRemaining: isSet(object.amountCentsRemaining)
+        ? globalThis.Number(object.amountCentsRemaining)
+        : isSet(object.amount_cents_remaining)
+        ? globalThis.Number(object.amount_cents_remaining)
+        : 0,
+      currency: isSet(object.currency) ? globalThis.String(object.currency) : "",
+      percentageRate: isSet(object.percentageRate)
+        ? globalThis.Number(object.percentageRate)
+        : isSet(object.percentage_rate)
+        ? globalThis.Number(object.percentage_rate)
+        : 0,
+      frequency: isSet(object.frequency) ? globalThis.String(object.frequency) : "",
+      frequencyRemaining: isSet(object.frequencyRemaining)
+        ? globalThis.Number(object.frequencyRemaining)
+        : isSet(object.frequency_remaining)
+        ? globalThis.Number(object.frequency_remaining)
+        : 0,
+      expiresAtUnixNanos: isSet(object.expiresAtUnixNanos)
+        ? globalThis.Number(object.expiresAtUnixNanos)
+        : isSet(object.expires_at_unix_nanos)
+        ? globalThis.Number(object.expires_at_unix_nanos)
+        : 0,
+    };
+  },
+
+  toJSON(message: TApiCoupon): unknown {
+    const obj: any = {};
+    if (message.id !== "") {
+      obj.id = message.id;
+    }
+    if (message.code !== "") {
+      obj.code = message.code;
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.status !== "") {
+      obj.status = message.status;
+    }
+    if (message.amountCents !== 0) {
+      obj.amountCents = Math.round(message.amountCents);
+    }
+    if (message.amountCentsRemaining !== 0) {
+      obj.amountCentsRemaining = Math.round(message.amountCentsRemaining);
+    }
+    if (message.currency !== "") {
+      obj.currency = message.currency;
+    }
+    if (message.percentageRate !== 0) {
+      obj.percentageRate = message.percentageRate;
+    }
+    if (message.frequency !== "") {
+      obj.frequency = message.frequency;
+    }
+    if (message.frequencyRemaining !== 0) {
+      obj.frequencyRemaining = Math.round(message.frequencyRemaining);
+    }
+    if (message.expiresAtUnixNanos !== 0) {
+      obj.expiresAtUnixNanos = Math.round(message.expiresAtUnixNanos);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiCoupon>): TApiCoupon {
+    return TApiCoupon.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiCoupon>): TApiCoupon {
+    const message = createBaseTApiCoupon();
+    message.id = object.id ?? "";
+    message.code = object.code ?? "";
+    message.name = object.name ?? "";
+    message.status = object.status ?? "";
+    message.amountCents = object.amountCents ?? 0;
+    message.amountCentsRemaining = object.amountCentsRemaining ?? 0;
+    message.currency = object.currency ?? "";
+    message.percentageRate = object.percentageRate ?? 0;
+    message.frequency = object.frequency ?? "";
+    message.frequencyRemaining = object.frequencyRemaining ?? 0;
+    message.expiresAtUnixNanos = object.expiresAtUnixNanos ?? 0;
+    return message;
+  },
+};
+
+function createBaseTApiListOrganizationInvoicesRequest(): TApiListOrganizationInvoicesRequest {
+  return { apiKey: "", organizationId: "", page: 0, perPage: 0 };
+}
+
+export const TApiListOrganizationInvoicesRequest: MessageFns<TApiListOrganizationInvoicesRequest> = {
+  encode(message: TApiListOrganizationInvoicesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.organizationId !== "") {
+      writer.uint32(18).string(message.organizationId);
+    }
+    if (message.page !== 0) {
+      writer.uint32(24).int32(message.page);
+    }
+    if (message.perPage !== 0) {
+      writer.uint32(32).int32(message.perPage);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListOrganizationInvoicesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListOrganizationInvoicesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.organizationId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.page = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.perPage = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListOrganizationInvoicesRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      organizationId: isSet(object.organizationId)
+        ? globalThis.String(object.organizationId)
+        : isSet(object.organization_id)
+        ? globalThis.String(object.organization_id)
+        : "",
+      page: isSet(object.page) ? globalThis.Number(object.page) : 0,
+      perPage: isSet(object.perPage)
+        ? globalThis.Number(object.perPage)
+        : isSet(object.per_page)
+        ? globalThis.Number(object.per_page)
+        : 0,
+    };
+  },
+
+  toJSON(message: TApiListOrganizationInvoicesRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.organizationId !== "") {
+      obj.organizationId = message.organizationId;
+    }
+    if (message.page !== 0) {
+      obj.page = Math.round(message.page);
+    }
+    if (message.perPage !== 0) {
+      obj.perPage = Math.round(message.perPage);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListOrganizationInvoicesRequest>): TApiListOrganizationInvoicesRequest {
+    return TApiListOrganizationInvoicesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListOrganizationInvoicesRequest>): TApiListOrganizationInvoicesRequest {
+    const message = createBaseTApiListOrganizationInvoicesRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.organizationId = object.organizationId ?? "";
+    message.page = object.page ?? 0;
+    message.perPage = object.perPage ?? 0;
+    return message;
+  },
+};
+
+function createBaseTApiListOrganizationInvoicesResponse(): TApiListOrganizationInvoicesResponse {
+  return { invoices: [] };
+}
+
+export const TApiListOrganizationInvoicesResponse: MessageFns<TApiListOrganizationInvoicesResponse> = {
+  encode(message: TApiListOrganizationInvoicesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.invoices) {
+      TApiInvoice.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListOrganizationInvoicesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListOrganizationInvoicesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.invoices.push(TApiInvoice.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListOrganizationInvoicesResponse {
+    return {
+      invoices: globalThis.Array.isArray(object?.invoices)
+        ? object.invoices.map((e: any) => TApiInvoice.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TApiListOrganizationInvoicesResponse): unknown {
+    const obj: any = {};
+    if (message.invoices?.length) {
+      obj.invoices = message.invoices.map((e) => TApiInvoice.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListOrganizationInvoicesResponse>): TApiListOrganizationInvoicesResponse {
+    return TApiListOrganizationInvoicesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListOrganizationInvoicesResponse>): TApiListOrganizationInvoicesResponse {
+    const message = createBaseTApiListOrganizationInvoicesResponse();
+    message.invoices = object.invoices?.map((e) => TApiInvoice.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseTApiGetOrganizationInvoiceRequest(): TApiGetOrganizationInvoiceRequest {
+  return { apiKey: "", organizationId: "", invoiceId: "" };
+}
+
+export const TApiGetOrganizationInvoiceRequest: MessageFns<TApiGetOrganizationInvoiceRequest> = {
+  encode(message: TApiGetOrganizationInvoiceRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.organizationId !== "") {
+      writer.uint32(18).string(message.organizationId);
+    }
+    if (message.invoiceId !== "") {
+      writer.uint32(26).string(message.invoiceId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetOrganizationInvoiceRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetOrganizationInvoiceRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.organizationId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.invoiceId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetOrganizationInvoiceRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      organizationId: isSet(object.organizationId)
+        ? globalThis.String(object.organizationId)
+        : isSet(object.organization_id)
+        ? globalThis.String(object.organization_id)
+        : "",
+      invoiceId: isSet(object.invoiceId)
+        ? globalThis.String(object.invoiceId)
+        : isSet(object.invoice_id)
+        ? globalThis.String(object.invoice_id)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiGetOrganizationInvoiceRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.organizationId !== "") {
+      obj.organizationId = message.organizationId;
+    }
+    if (message.invoiceId !== "") {
+      obj.invoiceId = message.invoiceId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetOrganizationInvoiceRequest>): TApiGetOrganizationInvoiceRequest {
+    return TApiGetOrganizationInvoiceRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiGetOrganizationInvoiceRequest>): TApiGetOrganizationInvoiceRequest {
+    const message = createBaseTApiGetOrganizationInvoiceRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.organizationId = object.organizationId ?? "";
+    message.invoiceId = object.invoiceId ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiGetOrganizationInvoiceResponse(): TApiGetOrganizationInvoiceResponse {
+  return { invoice: undefined, members: [] };
+}
+
+export const TApiGetOrganizationInvoiceResponse: MessageFns<TApiGetOrganizationInvoiceResponse> = {
+  encode(message: TApiGetOrganizationInvoiceResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.invoice !== undefined) {
+      TApiInvoice.encode(message.invoice, writer.uint32(10).fork()).join();
+    }
+    for (const v of message.members) {
+      TApiMemberUsage.encode(v!, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetOrganizationInvoiceResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetOrganizationInvoiceResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.invoice = TApiInvoice.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.members.push(TApiMemberUsage.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetOrganizationInvoiceResponse {
+    return {
+      invoice: isSet(object.invoice) ? TApiInvoice.fromJSON(object.invoice) : undefined,
+      members: globalThis.Array.isArray(object?.members)
+        ? object.members.map((e: any) => TApiMemberUsage.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TApiGetOrganizationInvoiceResponse): unknown {
+    const obj: any = {};
+    if (message.invoice !== undefined) {
+      obj.invoice = TApiInvoice.toJSON(message.invoice);
+    }
+    if (message.members?.length) {
+      obj.members = message.members.map((e) => TApiMemberUsage.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetOrganizationInvoiceResponse>): TApiGetOrganizationInvoiceResponse {
+    return TApiGetOrganizationInvoiceResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiGetOrganizationInvoiceResponse>): TApiGetOrganizationInvoiceResponse {
+    const message = createBaseTApiGetOrganizationInvoiceResponse();
+    message.invoice = (object.invoice !== undefined && object.invoice !== null)
+      ? TApiInvoice.fromPartial(object.invoice)
+      : undefined;
+    message.members = object.members?.map((e) => TApiMemberUsage.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseTApiInvoice(): TApiInvoice {
+  return {
+    id: "",
+    number: "",
+    status: "",
+    paymentStatus: "",
+    currency: "",
+    issuedOnUnixNanos: 0,
+    periodFromUnixNanos: 0,
+    periodToUnixNanos: 0,
+    subtotalCents: 0,
+    taxCents: 0,
+    totalCents: 0,
+    prepaidCreditCents: 0,
+    lines: [],
+    feesCents: 0,
+    couponCents: 0,
+    prepaidGrantedCreditCents: 0,
+    prepaidPurchasedCreditCents: 0,
+  };
+}
+
+export const TApiInvoice: MessageFns<TApiInvoice> = {
+  encode(message: TApiInvoice, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
+    }
+    if (message.number !== "") {
+      writer.uint32(18).string(message.number);
+    }
+    if (message.status !== "") {
+      writer.uint32(26).string(message.status);
+    }
+    if (message.paymentStatus !== "") {
+      writer.uint32(34).string(message.paymentStatus);
+    }
+    if (message.currency !== "") {
+      writer.uint32(42).string(message.currency);
+    }
+    if (message.issuedOnUnixNanos !== 0) {
+      writer.uint32(48).int64(message.issuedOnUnixNanos);
+    }
+    if (message.periodFromUnixNanos !== 0) {
+      writer.uint32(56).int64(message.periodFromUnixNanos);
+    }
+    if (message.periodToUnixNanos !== 0) {
+      writer.uint32(64).int64(message.periodToUnixNanos);
+    }
+    if (message.subtotalCents !== 0) {
+      writer.uint32(72).int64(message.subtotalCents);
+    }
+    if (message.taxCents !== 0) {
+      writer.uint32(80).int64(message.taxCents);
+    }
+    if (message.totalCents !== 0) {
+      writer.uint32(88).int64(message.totalCents);
+    }
+    if (message.prepaidCreditCents !== 0) {
+      writer.uint32(96).int64(message.prepaidCreditCents);
+    }
+    for (const v of message.lines) {
+      TApiInvoiceLine.encode(v!, writer.uint32(106).fork()).join();
+    }
+    if (message.feesCents !== 0) {
+      writer.uint32(112).int64(message.feesCents);
+    }
+    if (message.couponCents !== 0) {
+      writer.uint32(120).int64(message.couponCents);
+    }
+    if (message.prepaidGrantedCreditCents !== 0) {
+      writer.uint32(128).int64(message.prepaidGrantedCreditCents);
+    }
+    if (message.prepaidPurchasedCreditCents !== 0) {
+      writer.uint32(136).int64(message.prepaidPurchasedCreditCents);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiInvoice {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiInvoice();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.id = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.number = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.status = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.paymentStatus = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.currency = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.issuedOnUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.periodFromUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.periodToUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.subtotalCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.taxCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.totalCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 12: {
+          if (tag !== 96) {
+            break;
+          }
+
+          message.prepaidCreditCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.lines.push(TApiInvoiceLine.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 14: {
+          if (tag !== 112) {
+            break;
+          }
+
+          message.feesCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 15: {
+          if (tag !== 120) {
+            break;
+          }
+
+          message.couponCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 16: {
+          if (tag !== 128) {
+            break;
+          }
+
+          message.prepaidGrantedCreditCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 17: {
+          if (tag !== 136) {
+            break;
+          }
+
+          message.prepaidPurchasedCreditCents = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiInvoice {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "",
+      number: isSet(object.number) ? globalThis.String(object.number) : "",
+      status: isSet(object.status) ? globalThis.String(object.status) : "",
+      paymentStatus: isSet(object.paymentStatus)
+        ? globalThis.String(object.paymentStatus)
+        : isSet(object.payment_status)
+        ? globalThis.String(object.payment_status)
+        : "",
+      currency: isSet(object.currency) ? globalThis.String(object.currency) : "",
+      issuedOnUnixNanos: isSet(object.issuedOnUnixNanos)
+        ? globalThis.Number(object.issuedOnUnixNanos)
+        : isSet(object.issued_on_unix_nanos)
+        ? globalThis.Number(object.issued_on_unix_nanos)
+        : 0,
+      periodFromUnixNanos: isSet(object.periodFromUnixNanos)
+        ? globalThis.Number(object.periodFromUnixNanos)
+        : isSet(object.period_from_unix_nanos)
+        ? globalThis.Number(object.period_from_unix_nanos)
+        : 0,
+      periodToUnixNanos: isSet(object.periodToUnixNanos)
+        ? globalThis.Number(object.periodToUnixNanos)
+        : isSet(object.period_to_unix_nanos)
+        ? globalThis.Number(object.period_to_unix_nanos)
+        : 0,
+      subtotalCents: isSet(object.subtotalCents)
+        ? globalThis.Number(object.subtotalCents)
+        : isSet(object.subtotal_cents)
+        ? globalThis.Number(object.subtotal_cents)
+        : 0,
+      taxCents: isSet(object.taxCents)
+        ? globalThis.Number(object.taxCents)
+        : isSet(object.tax_cents)
+        ? globalThis.Number(object.tax_cents)
+        : 0,
+      totalCents: isSet(object.totalCents)
+        ? globalThis.Number(object.totalCents)
+        : isSet(object.total_cents)
+        ? globalThis.Number(object.total_cents)
+        : 0,
+      prepaidCreditCents: isSet(object.prepaidCreditCents)
+        ? globalThis.Number(object.prepaidCreditCents)
+        : isSet(object.prepaid_credit_cents)
+        ? globalThis.Number(object.prepaid_credit_cents)
+        : 0,
+      lines: globalThis.Array.isArray(object?.lines)
+        ? object.lines.map((e: any) => TApiInvoiceLine.fromJSON(e))
+        : [],
+      feesCents: isSet(object.feesCents)
+        ? globalThis.Number(object.feesCents)
+        : isSet(object.fees_cents)
+        ? globalThis.Number(object.fees_cents)
+        : 0,
+      couponCents: isSet(object.couponCents)
+        ? globalThis.Number(object.couponCents)
+        : isSet(object.coupon_cents)
+        ? globalThis.Number(object.coupon_cents)
+        : 0,
+      prepaidGrantedCreditCents: isSet(object.prepaidGrantedCreditCents)
+        ? globalThis.Number(object.prepaidGrantedCreditCents)
+        : isSet(object.prepaid_granted_credit_cents)
+        ? globalThis.Number(object.prepaid_granted_credit_cents)
+        : 0,
+      prepaidPurchasedCreditCents: isSet(object.prepaidPurchasedCreditCents)
+        ? globalThis.Number(object.prepaidPurchasedCreditCents)
+        : isSet(object.prepaid_purchased_credit_cents)
+        ? globalThis.Number(object.prepaid_purchased_credit_cents)
+        : 0,
+    };
+  },
+
+  toJSON(message: TApiInvoice): unknown {
+    const obj: any = {};
+    if (message.id !== "") {
+      obj.id = message.id;
+    }
+    if (message.number !== "") {
+      obj.number = message.number;
+    }
+    if (message.status !== "") {
+      obj.status = message.status;
+    }
+    if (message.paymentStatus !== "") {
+      obj.paymentStatus = message.paymentStatus;
+    }
+    if (message.currency !== "") {
+      obj.currency = message.currency;
+    }
+    if (message.issuedOnUnixNanos !== 0) {
+      obj.issuedOnUnixNanos = Math.round(message.issuedOnUnixNanos);
+    }
+    if (message.periodFromUnixNanos !== 0) {
+      obj.periodFromUnixNanos = Math.round(message.periodFromUnixNanos);
+    }
+    if (message.periodToUnixNanos !== 0) {
+      obj.periodToUnixNanos = Math.round(message.periodToUnixNanos);
+    }
+    if (message.subtotalCents !== 0) {
+      obj.subtotalCents = Math.round(message.subtotalCents);
+    }
+    if (message.taxCents !== 0) {
+      obj.taxCents = Math.round(message.taxCents);
+    }
+    if (message.totalCents !== 0) {
+      obj.totalCents = Math.round(message.totalCents);
+    }
+    if (message.prepaidCreditCents !== 0) {
+      obj.prepaidCreditCents = Math.round(message.prepaidCreditCents);
+    }
+    if (message.lines?.length) {
+      obj.lines = message.lines.map((e) => TApiInvoiceLine.toJSON(e));
+    }
+    if (message.feesCents !== 0) {
+      obj.feesCents = Math.round(message.feesCents);
+    }
+    if (message.couponCents !== 0) {
+      obj.couponCents = Math.round(message.couponCents);
+    }
+    if (message.prepaidGrantedCreditCents !== 0) {
+      obj.prepaidGrantedCreditCents = Math.round(message.prepaidGrantedCreditCents);
+    }
+    if (message.prepaidPurchasedCreditCents !== 0) {
+      obj.prepaidPurchasedCreditCents = Math.round(message.prepaidPurchasedCreditCents);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiInvoice>): TApiInvoice {
+    return TApiInvoice.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiInvoice>): TApiInvoice {
+    const message = createBaseTApiInvoice();
+    message.id = object.id ?? "";
+    message.number = object.number ?? "";
+    message.status = object.status ?? "";
+    message.paymentStatus = object.paymentStatus ?? "";
+    message.currency = object.currency ?? "";
+    message.issuedOnUnixNanos = object.issuedOnUnixNanos ?? 0;
+    message.periodFromUnixNanos = object.periodFromUnixNanos ?? 0;
+    message.periodToUnixNanos = object.periodToUnixNanos ?? 0;
+    message.subtotalCents = object.subtotalCents ?? 0;
+    message.taxCents = object.taxCents ?? 0;
+    message.totalCents = object.totalCents ?? 0;
+    message.prepaidCreditCents = object.prepaidCreditCents ?? 0;
+    message.lines = object.lines?.map((e) => TApiInvoiceLine.fromPartial(e)) || [];
+    message.feesCents = object.feesCents ?? 0;
+    message.couponCents = object.couponCents ?? 0;
+    message.prepaidGrantedCreditCents = object.prepaidGrantedCreditCents ?? 0;
+    message.prepaidPurchasedCreditCents = object.prepaidPurchasedCreditCents ?? 0;
+    return message;
+  },
+};
+
+function createBaseTApiInvoiceLine(): TApiInvoiceLine {
+  return { code: "", kind: "", units: 0, cents: 0, fromUnixNanos: 0, toUnixNanos: 0 };
+}
+
+export const TApiInvoiceLine: MessageFns<TApiInvoiceLine> = {
+  encode(message: TApiInvoiceLine, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.code !== "") {
+      writer.uint32(10).string(message.code);
+    }
+    if (message.kind !== "") {
+      writer.uint32(18).string(message.kind);
+    }
+    if (message.units !== 0) {
+      writer.uint32(25).double(message.units);
+    }
+    if (message.cents !== 0) {
+      writer.uint32(32).int64(message.cents);
+    }
+    if (message.fromUnixNanos !== 0) {
+      writer.uint32(40).int64(message.fromUnixNanos);
+    }
+    if (message.toUnixNanos !== 0) {
+      writer.uint32(48).int64(message.toUnixNanos);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiInvoiceLine {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiInvoiceLine();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.code = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.kind = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 25) {
+            break;
+          }
+
+          message.units = reader.double();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.cents = longToNumber(reader.int64());
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.fromUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.toUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiInvoiceLine {
+    return {
+      code: isSet(object.code) ? globalThis.String(object.code) : "",
+      kind: isSet(object.kind) ? globalThis.String(object.kind) : "",
+      units: isSet(object.units) ? globalThis.Number(object.units) : 0,
+      cents: isSet(object.cents) ? globalThis.Number(object.cents) : 0,
+      fromUnixNanos: isSet(object.fromUnixNanos)
+        ? globalThis.Number(object.fromUnixNanos)
+        : isSet(object.from_unix_nanos)
+        ? globalThis.Number(object.from_unix_nanos)
+        : 0,
+      toUnixNanos: isSet(object.toUnixNanos)
+        ? globalThis.Number(object.toUnixNanos)
+        : isSet(object.to_unix_nanos)
+        ? globalThis.Number(object.to_unix_nanos)
+        : 0,
+    };
+  },
+
+  toJSON(message: TApiInvoiceLine): unknown {
+    const obj: any = {};
+    if (message.code !== "") {
+      obj.code = message.code;
+    }
+    if (message.kind !== "") {
+      obj.kind = message.kind;
+    }
+    if (message.units !== 0) {
+      obj.units = message.units;
+    }
+    if (message.cents !== 0) {
+      obj.cents = Math.round(message.cents);
+    }
+    if (message.fromUnixNanos !== 0) {
+      obj.fromUnixNanos = Math.round(message.fromUnixNanos);
+    }
+    if (message.toUnixNanos !== 0) {
+      obj.toUnixNanos = Math.round(message.toUnixNanos);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiInvoiceLine>): TApiInvoiceLine {
+    return TApiInvoiceLine.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiInvoiceLine>): TApiInvoiceLine {
+    const message = createBaseTApiInvoiceLine();
+    message.code = object.code ?? "";
+    message.kind = object.kind ?? "";
+    message.units = object.units ?? 0;
+    message.cents = object.cents ?? 0;
+    message.fromUnixNanos = object.fromUnixNanos ?? 0;
+    message.toUnixNanos = object.toUnixNanos ?? 0;
+    return message;
+  },
+};
+
+function createBaseTApiGetOrganizationBillingOverviewRequest(): TApiGetOrganizationBillingOverviewRequest {
+  return { apiKey: "", organizationId: "" };
+}
+
+export const TApiGetOrganizationBillingOverviewRequest: MessageFns<TApiGetOrganizationBillingOverviewRequest> = {
+  encode(message: TApiGetOrganizationBillingOverviewRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.organizationId !== "") {
+      writer.uint32(18).string(message.organizationId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetOrganizationBillingOverviewRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetOrganizationBillingOverviewRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.organizationId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetOrganizationBillingOverviewRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      organizationId: isSet(object.organizationId)
+        ? globalThis.String(object.organizationId)
+        : isSet(object.organization_id)
+        ? globalThis.String(object.organization_id)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiGetOrganizationBillingOverviewRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.organizationId !== "") {
+      obj.organizationId = message.organizationId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetOrganizationBillingOverviewRequest>): TApiGetOrganizationBillingOverviewRequest {
+    return TApiGetOrganizationBillingOverviewRequest.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<TApiGetOrganizationBillingOverviewRequest>,
+  ): TApiGetOrganizationBillingOverviewRequest {
+    const message = createBaseTApiGetOrganizationBillingOverviewRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.organizationId = object.organizationId ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiGetOrganizationBillingOverviewResponse(): TApiGetOrganizationBillingOverviewResponse {
+  return {
+    currency: "",
+    provisioned: false,
+    periodFromUnixNanos: 0,
+    periodToUnixNanos: 0,
+    periodComputeSeconds: 0,
+    periodStorageHours: 0,
+    periodEstimatedCents: 0,
+    periodEstimatedCentsValid: false,
+    creditBalance: 0,
+    creditBalanceCheckedAtUnixNanos: 0,
+    creditBalanceValid: false,
+    creditEffectiveBalance: 0,
+    creditBlocked: false,
+    creditEffectiveCheckedAtUnixNanos: 0,
+    creditEffectiveValid: false,
+    limitsStorageBillingEnabled: false,
+    limitsMaxSandboxes: 0,
+    limitsSignupPromotionCents: 0,
+    limitsMonthlyPromotionCents: 0,
+    limitsComputedAtUnixNanos: 0,
+    limitsValid: false,
+    sandboxesInUse: 0,
+    topUpReason: 0,
+    degraded: [],
+  };
+}
+
+export const TApiGetOrganizationBillingOverviewResponse: MessageFns<TApiGetOrganizationBillingOverviewResponse> = {
+  encode(message: TApiGetOrganizationBillingOverviewResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.currency !== "") {
+      writer.uint32(10).string(message.currency);
+    }
+    if (message.provisioned !== false) {
+      writer.uint32(16).bool(message.provisioned);
+    }
+    if (message.periodFromUnixNanos !== 0) {
+      writer.uint32(24).int64(message.periodFromUnixNanos);
+    }
+    if (message.periodToUnixNanos !== 0) {
+      writer.uint32(32).int64(message.periodToUnixNanos);
+    }
+    if (message.periodComputeSeconds !== 0) {
+      writer.uint32(41).double(message.periodComputeSeconds);
+    }
+    if (message.periodStorageHours !== 0) {
+      writer.uint32(49).double(message.periodStorageHours);
+    }
+    if (message.periodEstimatedCents !== 0) {
+      writer.uint32(56).int64(message.periodEstimatedCents);
+    }
+    if (message.periodEstimatedCentsValid !== false) {
+      writer.uint32(64).bool(message.periodEstimatedCentsValid);
+    }
+    if (message.creditBalance !== 0) {
+      writer.uint32(73).double(message.creditBalance);
+    }
+    if (message.creditBalanceCheckedAtUnixNanos !== 0) {
+      writer.uint32(80).int64(message.creditBalanceCheckedAtUnixNanos);
+    }
+    if (message.creditBalanceValid !== false) {
+      writer.uint32(88).bool(message.creditBalanceValid);
+    }
+    if (message.creditEffectiveBalance !== 0) {
+      writer.uint32(97).double(message.creditEffectiveBalance);
+    }
+    if (message.creditBlocked !== false) {
+      writer.uint32(104).bool(message.creditBlocked);
+    }
+    if (message.creditEffectiveCheckedAtUnixNanos !== 0) {
+      writer.uint32(112).int64(message.creditEffectiveCheckedAtUnixNanos);
+    }
+    if (message.creditEffectiveValid !== false) {
+      writer.uint32(120).bool(message.creditEffectiveValid);
+    }
+    if (message.limitsStorageBillingEnabled !== false) {
+      writer.uint32(128).bool(message.limitsStorageBillingEnabled);
+    }
+    if (message.limitsMaxSandboxes !== 0) {
+      writer.uint32(136).int32(message.limitsMaxSandboxes);
+    }
+    if (message.limitsSignupPromotionCents !== 0) {
+      writer.uint32(144).int64(message.limitsSignupPromotionCents);
+    }
+    if (message.limitsMonthlyPromotionCents !== 0) {
+      writer.uint32(152).int64(message.limitsMonthlyPromotionCents);
+    }
+    if (message.limitsComputedAtUnixNanos !== 0) {
+      writer.uint32(160).int64(message.limitsComputedAtUnixNanos);
+    }
+    if (message.limitsValid !== false) {
+      writer.uint32(168).bool(message.limitsValid);
+    }
+    if (message.sandboxesInUse !== 0) {
+      writer.uint32(176).int32(message.sandboxesInUse);
+    }
+    if (message.topUpReason !== 0) {
+      writer.uint32(184).int32(message.topUpReason);
+    }
+    writer.uint32(194).fork();
+    for (const v of message.degraded) {
+      writer.int32(v);
+    }
+    writer.join();
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetOrganizationBillingOverviewResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetOrganizationBillingOverviewResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.currency = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.provisioned = reader.bool();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.periodFromUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.periodToUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 5: {
+          if (tag !== 41) {
+            break;
+          }
+
+          message.periodComputeSeconds = reader.double();
+          continue;
+        }
+        case 6: {
+          if (tag !== 49) {
+            break;
+          }
+
+          message.periodStorageHours = reader.double();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.periodEstimatedCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.periodEstimatedCentsValid = reader.bool();
+          continue;
+        }
+        case 9: {
+          if (tag !== 73) {
+            break;
+          }
+
+          message.creditBalance = reader.double();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.creditBalanceCheckedAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.creditBalanceValid = reader.bool();
+          continue;
+        }
+        case 12: {
+          if (tag !== 97) {
+            break;
+          }
+
+          message.creditEffectiveBalance = reader.double();
+          continue;
+        }
+        case 13: {
+          if (tag !== 104) {
+            break;
+          }
+
+          message.creditBlocked = reader.bool();
+          continue;
+        }
+        case 14: {
+          if (tag !== 112) {
+            break;
+          }
+
+          message.creditEffectiveCheckedAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 15: {
+          if (tag !== 120) {
+            break;
+          }
+
+          message.creditEffectiveValid = reader.bool();
+          continue;
+        }
+        case 16: {
+          if (tag !== 128) {
+            break;
+          }
+
+          message.limitsStorageBillingEnabled = reader.bool();
+          continue;
+        }
+        case 17: {
+          if (tag !== 136) {
+            break;
+          }
+
+          message.limitsMaxSandboxes = reader.int32();
+          continue;
+        }
+        case 18: {
+          if (tag !== 144) {
+            break;
+          }
+
+          message.limitsSignupPromotionCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 19: {
+          if (tag !== 152) {
+            break;
+          }
+
+          message.limitsMonthlyPromotionCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 20: {
+          if (tag !== 160) {
+            break;
+          }
+
+          message.limitsComputedAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 21: {
+          if (tag !== 168) {
+            break;
+          }
+
+          message.limitsValid = reader.bool();
+          continue;
+        }
+        case 22: {
+          if (tag !== 176) {
+            break;
+          }
+
+          message.sandboxesInUse = reader.int32();
+          continue;
+        }
+        case 23: {
+          if (tag !== 184) {
+            break;
+          }
+
+          message.topUpReason = reader.int32() as any;
+          continue;
+        }
+        case 24: {
+          if (tag === 192) {
+            message.degraded.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 194) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.degraded.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetOrganizationBillingOverviewResponse {
+    return {
+      currency: isSet(object.currency) ? globalThis.String(object.currency) : "",
+      provisioned: isSet(object.provisioned) ? globalThis.Boolean(object.provisioned) : false,
+      periodFromUnixNanos: isSet(object.periodFromUnixNanos)
+        ? globalThis.Number(object.periodFromUnixNanos)
+        : isSet(object.period_from_unix_nanos)
+        ? globalThis.Number(object.period_from_unix_nanos)
+        : 0,
+      periodToUnixNanos: isSet(object.periodToUnixNanos)
+        ? globalThis.Number(object.periodToUnixNanos)
+        : isSet(object.period_to_unix_nanos)
+        ? globalThis.Number(object.period_to_unix_nanos)
+        : 0,
+      periodComputeSeconds: isSet(object.periodComputeSeconds)
+        ? globalThis.Number(object.periodComputeSeconds)
+        : isSet(object.period_compute_seconds)
+        ? globalThis.Number(object.period_compute_seconds)
+        : 0,
+      periodStorageHours: isSet(object.periodStorageHours)
+        ? globalThis.Number(object.periodStorageHours)
+        : isSet(object.period_storage_hours)
+        ? globalThis.Number(object.period_storage_hours)
+        : 0,
+      periodEstimatedCents: isSet(object.periodEstimatedCents)
+        ? globalThis.Number(object.periodEstimatedCents)
+        : isSet(object.period_estimated_cents)
+        ? globalThis.Number(object.period_estimated_cents)
+        : 0,
+      periodEstimatedCentsValid: isSet(object.periodEstimatedCentsValid)
+        ? globalThis.Boolean(object.periodEstimatedCentsValid)
+        : isSet(object.period_estimated_cents_valid)
+        ? globalThis.Boolean(object.period_estimated_cents_valid)
+        : false,
+      creditBalance: isSet(object.creditBalance)
+        ? globalThis.Number(object.creditBalance)
+        : isSet(object.credit_balance)
+        ? globalThis.Number(object.credit_balance)
+        : 0,
+      creditBalanceCheckedAtUnixNanos: isSet(object.creditBalanceCheckedAtUnixNanos)
+        ? globalThis.Number(object.creditBalanceCheckedAtUnixNanos)
+        : isSet(object.credit_balance_checked_at_unix_nanos)
+        ? globalThis.Number(object.credit_balance_checked_at_unix_nanos)
+        : 0,
+      creditBalanceValid: isSet(object.creditBalanceValid)
+        ? globalThis.Boolean(object.creditBalanceValid)
+        : isSet(object.credit_balance_valid)
+        ? globalThis.Boolean(object.credit_balance_valid)
+        : false,
+      creditEffectiveBalance: isSet(object.creditEffectiveBalance)
+        ? globalThis.Number(object.creditEffectiveBalance)
+        : isSet(object.credit_effective_balance)
+        ? globalThis.Number(object.credit_effective_balance)
+        : 0,
+      creditBlocked: isSet(object.creditBlocked)
+        ? globalThis.Boolean(object.creditBlocked)
+        : isSet(object.credit_blocked)
+        ? globalThis.Boolean(object.credit_blocked)
+        : false,
+      creditEffectiveCheckedAtUnixNanos: isSet(object.creditEffectiveCheckedAtUnixNanos)
+        ? globalThis.Number(object.creditEffectiveCheckedAtUnixNanos)
+        : isSet(object.credit_effective_checked_at_unix_nanos)
+        ? globalThis.Number(object.credit_effective_checked_at_unix_nanos)
+        : 0,
+      creditEffectiveValid: isSet(object.creditEffectiveValid)
+        ? globalThis.Boolean(object.creditEffectiveValid)
+        : isSet(object.credit_effective_valid)
+        ? globalThis.Boolean(object.credit_effective_valid)
+        : false,
+      limitsStorageBillingEnabled: isSet(object.limitsStorageBillingEnabled)
+        ? globalThis.Boolean(object.limitsStorageBillingEnabled)
+        : isSet(object.limits_storage_billing_enabled)
+        ? globalThis.Boolean(object.limits_storage_billing_enabled)
+        : false,
+      limitsMaxSandboxes: isSet(object.limitsMaxSandboxes)
+        ? globalThis.Number(object.limitsMaxSandboxes)
+        : isSet(object.limits_max_sandboxes)
+        ? globalThis.Number(object.limits_max_sandboxes)
+        : 0,
+      limitsSignupPromotionCents: isSet(object.limitsSignupPromotionCents)
+        ? globalThis.Number(object.limitsSignupPromotionCents)
+        : isSet(object.limits_signup_promotion_cents)
+        ? globalThis.Number(object.limits_signup_promotion_cents)
+        : 0,
+      limitsMonthlyPromotionCents: isSet(object.limitsMonthlyPromotionCents)
+        ? globalThis.Number(object.limitsMonthlyPromotionCents)
+        : isSet(object.limits_monthly_promotion_cents)
+        ? globalThis.Number(object.limits_monthly_promotion_cents)
+        : 0,
+      limitsComputedAtUnixNanos: isSet(object.limitsComputedAtUnixNanos)
+        ? globalThis.Number(object.limitsComputedAtUnixNanos)
+        : isSet(object.limits_computed_at_unix_nanos)
+        ? globalThis.Number(object.limits_computed_at_unix_nanos)
+        : 0,
+      limitsValid: isSet(object.limitsValid)
+        ? globalThis.Boolean(object.limitsValid)
+        : isSet(object.limits_valid)
+        ? globalThis.Boolean(object.limits_valid)
+        : false,
+      sandboxesInUse: isSet(object.sandboxesInUse)
+        ? globalThis.Number(object.sandboxesInUse)
+        : isSet(object.sandboxes_in_use)
+        ? globalThis.Number(object.sandboxes_in_use)
+        : 0,
+      topUpReason: isSet(object.topUpReason)
+        ? tApiTopUpReasonFromJSON(object.topUpReason)
+        : isSet(object.top_up_reason)
+        ? tApiTopUpReasonFromJSON(object.top_up_reason)
+        : 0,
+      degraded: globalThis.Array.isArray(object?.degraded)
+        ? object.degraded.map((e: any) => tApiDegradationFromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TApiGetOrganizationBillingOverviewResponse): unknown {
+    const obj: any = {};
+    if (message.currency !== "") {
+      obj.currency = message.currency;
+    }
+    if (message.provisioned !== false) {
+      obj.provisioned = message.provisioned;
+    }
+    if (message.periodFromUnixNanos !== 0) {
+      obj.periodFromUnixNanos = Math.round(message.periodFromUnixNanos);
+    }
+    if (message.periodToUnixNanos !== 0) {
+      obj.periodToUnixNanos = Math.round(message.periodToUnixNanos);
+    }
+    if (message.periodComputeSeconds !== 0) {
+      obj.periodComputeSeconds = message.periodComputeSeconds;
+    }
+    if (message.periodStorageHours !== 0) {
+      obj.periodStorageHours = message.periodStorageHours;
+    }
+    if (message.periodEstimatedCents !== 0) {
+      obj.periodEstimatedCents = Math.round(message.periodEstimatedCents);
+    }
+    if (message.periodEstimatedCentsValid !== false) {
+      obj.periodEstimatedCentsValid = message.periodEstimatedCentsValid;
+    }
+    if (message.creditBalance !== 0) {
+      obj.creditBalance = message.creditBalance;
+    }
+    if (message.creditBalanceCheckedAtUnixNanos !== 0) {
+      obj.creditBalanceCheckedAtUnixNanos = Math.round(message.creditBalanceCheckedAtUnixNanos);
+    }
+    if (message.creditBalanceValid !== false) {
+      obj.creditBalanceValid = message.creditBalanceValid;
+    }
+    if (message.creditEffectiveBalance !== 0) {
+      obj.creditEffectiveBalance = message.creditEffectiveBalance;
+    }
+    if (message.creditBlocked !== false) {
+      obj.creditBlocked = message.creditBlocked;
+    }
+    if (message.creditEffectiveCheckedAtUnixNanos !== 0) {
+      obj.creditEffectiveCheckedAtUnixNanos = Math.round(message.creditEffectiveCheckedAtUnixNanos);
+    }
+    if (message.creditEffectiveValid !== false) {
+      obj.creditEffectiveValid = message.creditEffectiveValid;
+    }
+    if (message.limitsStorageBillingEnabled !== false) {
+      obj.limitsStorageBillingEnabled = message.limitsStorageBillingEnabled;
+    }
+    if (message.limitsMaxSandboxes !== 0) {
+      obj.limitsMaxSandboxes = Math.round(message.limitsMaxSandboxes);
+    }
+    if (message.limitsSignupPromotionCents !== 0) {
+      obj.limitsSignupPromotionCents = Math.round(message.limitsSignupPromotionCents);
+    }
+    if (message.limitsMonthlyPromotionCents !== 0) {
+      obj.limitsMonthlyPromotionCents = Math.round(message.limitsMonthlyPromotionCents);
+    }
+    if (message.limitsComputedAtUnixNanos !== 0) {
+      obj.limitsComputedAtUnixNanos = Math.round(message.limitsComputedAtUnixNanos);
+    }
+    if (message.limitsValid !== false) {
+      obj.limitsValid = message.limitsValid;
+    }
+    if (message.sandboxesInUse !== 0) {
+      obj.sandboxesInUse = Math.round(message.sandboxesInUse);
+    }
+    if (message.topUpReason !== 0) {
+      obj.topUpReason = tApiTopUpReasonToJSON(message.topUpReason);
+    }
+    if (message.degraded?.length) {
+      obj.degraded = message.degraded.map((e) => tApiDegradationToJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetOrganizationBillingOverviewResponse>): TApiGetOrganizationBillingOverviewResponse {
+    return TApiGetOrganizationBillingOverviewResponse.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<TApiGetOrganizationBillingOverviewResponse>,
+  ): TApiGetOrganizationBillingOverviewResponse {
+    const message = createBaseTApiGetOrganizationBillingOverviewResponse();
+    message.currency = object.currency ?? "";
+    message.provisioned = object.provisioned ?? false;
+    message.periodFromUnixNanos = object.periodFromUnixNanos ?? 0;
+    message.periodToUnixNanos = object.periodToUnixNanos ?? 0;
+    message.periodComputeSeconds = object.periodComputeSeconds ?? 0;
+    message.periodStorageHours = object.periodStorageHours ?? 0;
+    message.periodEstimatedCents = object.periodEstimatedCents ?? 0;
+    message.periodEstimatedCentsValid = object.periodEstimatedCentsValid ?? false;
+    message.creditBalance = object.creditBalance ?? 0;
+    message.creditBalanceCheckedAtUnixNanos = object.creditBalanceCheckedAtUnixNanos ?? 0;
+    message.creditBalanceValid = object.creditBalanceValid ?? false;
+    message.creditEffectiveBalance = object.creditEffectiveBalance ?? 0;
+    message.creditBlocked = object.creditBlocked ?? false;
+    message.creditEffectiveCheckedAtUnixNanos = object.creditEffectiveCheckedAtUnixNanos ?? 0;
+    message.creditEffectiveValid = object.creditEffectiveValid ?? false;
+    message.limitsStorageBillingEnabled = object.limitsStorageBillingEnabled ?? false;
+    message.limitsMaxSandboxes = object.limitsMaxSandboxes ?? 0;
+    message.limitsSignupPromotionCents = object.limitsSignupPromotionCents ?? 0;
+    message.limitsMonthlyPromotionCents = object.limitsMonthlyPromotionCents ?? 0;
+    message.limitsComputedAtUnixNanos = object.limitsComputedAtUnixNanos ?? 0;
+    message.limitsValid = object.limitsValid ?? false;
+    message.sandboxesInUse = object.sandboxesInUse ?? 0;
+    message.topUpReason = object.topUpReason ?? 0;
+    message.degraded = object.degraded?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseTApiGetOrganizationUsageBreakdownRequest(): TApiGetOrganizationUsageBreakdownRequest {
+  return { apiKey: "", organizationId: "", fromUnixNanos: 0, toUnixNanos: 0 };
+}
+
+export const TApiGetOrganizationUsageBreakdownRequest: MessageFns<TApiGetOrganizationUsageBreakdownRequest> = {
+  encode(message: TApiGetOrganizationUsageBreakdownRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.organizationId !== "") {
+      writer.uint32(18).string(message.organizationId);
+    }
+    if (message.fromUnixNanos !== 0) {
+      writer.uint32(24).int64(message.fromUnixNanos);
+    }
+    if (message.toUnixNanos !== 0) {
+      writer.uint32(32).int64(message.toUnixNanos);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetOrganizationUsageBreakdownRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetOrganizationUsageBreakdownRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.organizationId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.fromUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.toUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetOrganizationUsageBreakdownRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      organizationId: isSet(object.organizationId)
+        ? globalThis.String(object.organizationId)
+        : isSet(object.organization_id)
+        ? globalThis.String(object.organization_id)
+        : "",
+      fromUnixNanos: isSet(object.fromUnixNanos)
+        ? globalThis.Number(object.fromUnixNanos)
+        : isSet(object.from_unix_nanos)
+        ? globalThis.Number(object.from_unix_nanos)
+        : 0,
+      toUnixNanos: isSet(object.toUnixNanos)
+        ? globalThis.Number(object.toUnixNanos)
+        : isSet(object.to_unix_nanos)
+        ? globalThis.Number(object.to_unix_nanos)
+        : 0,
+    };
+  },
+
+  toJSON(message: TApiGetOrganizationUsageBreakdownRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.organizationId !== "") {
+      obj.organizationId = message.organizationId;
+    }
+    if (message.fromUnixNanos !== 0) {
+      obj.fromUnixNanos = Math.round(message.fromUnixNanos);
+    }
+    if (message.toUnixNanos !== 0) {
+      obj.toUnixNanos = Math.round(message.toUnixNanos);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetOrganizationUsageBreakdownRequest>): TApiGetOrganizationUsageBreakdownRequest {
+    return TApiGetOrganizationUsageBreakdownRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiGetOrganizationUsageBreakdownRequest>): TApiGetOrganizationUsageBreakdownRequest {
+    const message = createBaseTApiGetOrganizationUsageBreakdownRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.organizationId = object.organizationId ?? "";
+    message.fromUnixNanos = object.fromUnixNanos ?? 0;
+    message.toUnixNanos = object.toUnixNanos ?? 0;
+    return message;
+  },
+};
+
+function createBaseTApiBillingServiceUsage(): TApiBillingServiceUsage {
+  return {
+    metricCode: "",
+    unit: "",
+    units: 0,
+    estimatedCents: 0,
+    share: 0,
+    pricedValid: false,
+    heaviestUserId: "",
+    heaviestUnattributed: false,
+    heaviestUnits: 0,
+    heaviestPresent: false,
+  };
+}
+
+export const TApiBillingServiceUsage: MessageFns<TApiBillingServiceUsage> = {
+  encode(message: TApiBillingServiceUsage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.metricCode !== "") {
+      writer.uint32(10).string(message.metricCode);
+    }
+    if (message.unit !== "") {
+      writer.uint32(18).string(message.unit);
+    }
+    if (message.units !== 0) {
+      writer.uint32(25).double(message.units);
+    }
+    if (message.estimatedCents !== 0) {
+      writer.uint32(32).int64(message.estimatedCents);
+    }
+    if (message.share !== 0) {
+      writer.uint32(41).double(message.share);
+    }
+    if (message.pricedValid !== false) {
+      writer.uint32(48).bool(message.pricedValid);
+    }
+    if (message.heaviestUserId !== "") {
+      writer.uint32(58).string(message.heaviestUserId);
+    }
+    if (message.heaviestUnattributed !== false) {
+      writer.uint32(64).bool(message.heaviestUnattributed);
+    }
+    if (message.heaviestUnits !== 0) {
+      writer.uint32(73).double(message.heaviestUnits);
+    }
+    if (message.heaviestPresent !== false) {
+      writer.uint32(80).bool(message.heaviestPresent);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiBillingServiceUsage {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiBillingServiceUsage();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.metricCode = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.unit = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 25) {
+            break;
+          }
+
+          message.units = reader.double();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.estimatedCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 5: {
+          if (tag !== 41) {
+            break;
+          }
+
+          message.share = reader.double();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.pricedValid = reader.bool();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.heaviestUserId = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.heaviestUnattributed = reader.bool();
+          continue;
+        }
+        case 9: {
+          if (tag !== 73) {
+            break;
+          }
+
+          message.heaviestUnits = reader.double();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.heaviestPresent = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiBillingServiceUsage {
+    return {
+      metricCode: isSet(object.metricCode)
+        ? globalThis.String(object.metricCode)
+        : isSet(object.metric_code)
+        ? globalThis.String(object.metric_code)
+        : "",
+      unit: isSet(object.unit) ? globalThis.String(object.unit) : "",
+      units: isSet(object.units) ? globalThis.Number(object.units) : 0,
+      estimatedCents: isSet(object.estimatedCents)
+        ? globalThis.Number(object.estimatedCents)
+        : isSet(object.estimated_cents)
+        ? globalThis.Number(object.estimated_cents)
+        : 0,
+      share: isSet(object.share) ? globalThis.Number(object.share) : 0,
+      pricedValid: isSet(object.pricedValid)
+        ? globalThis.Boolean(object.pricedValid)
+        : isSet(object.priced_valid)
+        ? globalThis.Boolean(object.priced_valid)
+        : false,
+      heaviestUserId: isSet(object.heaviestUserId)
+        ? globalThis.String(object.heaviestUserId)
+        : isSet(object.heaviest_user_id)
+        ? globalThis.String(object.heaviest_user_id)
+        : "",
+      heaviestUnattributed: isSet(object.heaviestUnattributed)
+        ? globalThis.Boolean(object.heaviestUnattributed)
+        : isSet(object.heaviest_unattributed)
+        ? globalThis.Boolean(object.heaviest_unattributed)
+        : false,
+      heaviestUnits: isSet(object.heaviestUnits)
+        ? globalThis.Number(object.heaviestUnits)
+        : isSet(object.heaviest_units)
+        ? globalThis.Number(object.heaviest_units)
+        : 0,
+      heaviestPresent: isSet(object.heaviestPresent)
+        ? globalThis.Boolean(object.heaviestPresent)
+        : isSet(object.heaviest_present)
+        ? globalThis.Boolean(object.heaviest_present)
+        : false,
+    };
+  },
+
+  toJSON(message: TApiBillingServiceUsage): unknown {
+    const obj: any = {};
+    if (message.metricCode !== "") {
+      obj.metricCode = message.metricCode;
+    }
+    if (message.unit !== "") {
+      obj.unit = message.unit;
+    }
+    if (message.units !== 0) {
+      obj.units = message.units;
+    }
+    if (message.estimatedCents !== 0) {
+      obj.estimatedCents = Math.round(message.estimatedCents);
+    }
+    if (message.share !== 0) {
+      obj.share = message.share;
+    }
+    if (message.pricedValid !== false) {
+      obj.pricedValid = message.pricedValid;
+    }
+    if (message.heaviestUserId !== "") {
+      obj.heaviestUserId = message.heaviestUserId;
+    }
+    if (message.heaviestUnattributed !== false) {
+      obj.heaviestUnattributed = message.heaviestUnattributed;
+    }
+    if (message.heaviestUnits !== 0) {
+      obj.heaviestUnits = message.heaviestUnits;
+    }
+    if (message.heaviestPresent !== false) {
+      obj.heaviestPresent = message.heaviestPresent;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiBillingServiceUsage>): TApiBillingServiceUsage {
+    return TApiBillingServiceUsage.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiBillingServiceUsage>): TApiBillingServiceUsage {
+    const message = createBaseTApiBillingServiceUsage();
+    message.metricCode = object.metricCode ?? "";
+    message.unit = object.unit ?? "";
+    message.units = object.units ?? 0;
+    message.estimatedCents = object.estimatedCents ?? 0;
+    message.share = object.share ?? 0;
+    message.pricedValid = object.pricedValid ?? false;
+    message.heaviestUserId = object.heaviestUserId ?? "";
+    message.heaviestUnattributed = object.heaviestUnattributed ?? false;
+    message.heaviestUnits = object.heaviestUnits ?? 0;
+    message.heaviestPresent = object.heaviestPresent ?? false;
+    return message;
+  },
+};
+
+function createBaseTApiGetOrganizationUsageBreakdownResponse(): TApiGetOrganizationUsageBreakdownResponse {
+  return { currency: "", periodFromUnixNanos: 0, periodToUnixNanos: 0, services: [], members: [], degraded: [] };
+}
+
+export const TApiGetOrganizationUsageBreakdownResponse: MessageFns<TApiGetOrganizationUsageBreakdownResponse> = {
+  encode(message: TApiGetOrganizationUsageBreakdownResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.currency !== "") {
+      writer.uint32(10).string(message.currency);
+    }
+    if (message.periodFromUnixNanos !== 0) {
+      writer.uint32(16).int64(message.periodFromUnixNanos);
+    }
+    if (message.periodToUnixNanos !== 0) {
+      writer.uint32(24).int64(message.periodToUnixNanos);
+    }
+    for (const v of message.services) {
+      TApiBillingServiceUsage.encode(v!, writer.uint32(34).fork()).join();
+    }
+    for (const v of message.members) {
+      TApiMemberUsage.encode(v!, writer.uint32(42).fork()).join();
+    }
+    writer.uint32(50).fork();
+    for (const v of message.degraded) {
+      writer.int32(v);
+    }
+    writer.join();
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetOrganizationUsageBreakdownResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetOrganizationUsageBreakdownResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.currency = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.periodFromUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.periodToUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.services.push(TApiBillingServiceUsage.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.members.push(TApiMemberUsage.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 6: {
+          if (tag === 48) {
+            message.degraded.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 50) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.degraded.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetOrganizationUsageBreakdownResponse {
+    return {
+      currency: isSet(object.currency) ? globalThis.String(object.currency) : "",
+      periodFromUnixNanos: isSet(object.periodFromUnixNanos)
+        ? globalThis.Number(object.periodFromUnixNanos)
+        : isSet(object.period_from_unix_nanos)
+        ? globalThis.Number(object.period_from_unix_nanos)
+        : 0,
+      periodToUnixNanos: isSet(object.periodToUnixNanos)
+        ? globalThis.Number(object.periodToUnixNanos)
+        : isSet(object.period_to_unix_nanos)
+        ? globalThis.Number(object.period_to_unix_nanos)
+        : 0,
+      services: globalThis.Array.isArray(object?.services)
+        ? object.services.map((e: any) => TApiBillingServiceUsage.fromJSON(e))
+        : [],
+      members: globalThis.Array.isArray(object?.members)
+        ? object.members.map((e: any) => TApiMemberUsage.fromJSON(e))
+        : [],
+      degraded: globalThis.Array.isArray(object?.degraded)
+        ? object.degraded.map((e: any) => tApiDegradationFromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TApiGetOrganizationUsageBreakdownResponse): unknown {
+    const obj: any = {};
+    if (message.currency !== "") {
+      obj.currency = message.currency;
+    }
+    if (message.periodFromUnixNanos !== 0) {
+      obj.periodFromUnixNanos = Math.round(message.periodFromUnixNanos);
+    }
+    if (message.periodToUnixNanos !== 0) {
+      obj.periodToUnixNanos = Math.round(message.periodToUnixNanos);
+    }
+    if (message.services?.length) {
+      obj.services = message.services.map((e) => TApiBillingServiceUsage.toJSON(e));
+    }
+    if (message.members?.length) {
+      obj.members = message.members.map((e) => TApiMemberUsage.toJSON(e));
+    }
+    if (message.degraded?.length) {
+      obj.degraded = message.degraded.map((e) => tApiDegradationToJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetOrganizationUsageBreakdownResponse>): TApiGetOrganizationUsageBreakdownResponse {
+    return TApiGetOrganizationUsageBreakdownResponse.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<TApiGetOrganizationUsageBreakdownResponse>,
+  ): TApiGetOrganizationUsageBreakdownResponse {
+    const message = createBaseTApiGetOrganizationUsageBreakdownResponse();
+    message.currency = object.currency ?? "";
+    message.periodFromUnixNanos = object.periodFromUnixNanos ?? 0;
+    message.periodToUnixNanos = object.periodToUnixNanos ?? 0;
+    message.services = object.services?.map((e) => TApiBillingServiceUsage.fromPartial(e)) || [];
+    message.members = object.members?.map((e) => TApiMemberUsage.fromPartial(e)) || [];
+    message.degraded = object.degraded?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseTApiGetOrganizationUsageSeriesRequest(): TApiGetOrganizationUsageSeriesRequest {
+  return { apiKey: "", organizationId: "", fromUnixNanos: 0, toUnixNanos: 0, bucket: "" };
+}
+
+export const TApiGetOrganizationUsageSeriesRequest: MessageFns<TApiGetOrganizationUsageSeriesRequest> = {
+  encode(message: TApiGetOrganizationUsageSeriesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.organizationId !== "") {
+      writer.uint32(18).string(message.organizationId);
+    }
+    if (message.fromUnixNanos !== 0) {
+      writer.uint32(24).int64(message.fromUnixNanos);
+    }
+    if (message.toUnixNanos !== 0) {
+      writer.uint32(32).int64(message.toUnixNanos);
+    }
+    if (message.bucket !== "") {
+      writer.uint32(42).string(message.bucket);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetOrganizationUsageSeriesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetOrganizationUsageSeriesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.organizationId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.fromUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.toUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.bucket = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetOrganizationUsageSeriesRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      organizationId: isSet(object.organizationId)
+        ? globalThis.String(object.organizationId)
+        : isSet(object.organization_id)
+        ? globalThis.String(object.organization_id)
+        : "",
+      fromUnixNanos: isSet(object.fromUnixNanos)
+        ? globalThis.Number(object.fromUnixNanos)
+        : isSet(object.from_unix_nanos)
+        ? globalThis.Number(object.from_unix_nanos)
+        : 0,
+      toUnixNanos: isSet(object.toUnixNanos)
+        ? globalThis.Number(object.toUnixNanos)
+        : isSet(object.to_unix_nanos)
+        ? globalThis.Number(object.to_unix_nanos)
+        : 0,
+      bucket: isSet(object.bucket) ? globalThis.String(object.bucket) : "",
+    };
+  },
+
+  toJSON(message: TApiGetOrganizationUsageSeriesRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.organizationId !== "") {
+      obj.organizationId = message.organizationId;
+    }
+    if (message.fromUnixNanos !== 0) {
+      obj.fromUnixNanos = Math.round(message.fromUnixNanos);
+    }
+    if (message.toUnixNanos !== 0) {
+      obj.toUnixNanos = Math.round(message.toUnixNanos);
+    }
+    if (message.bucket !== "") {
+      obj.bucket = message.bucket;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetOrganizationUsageSeriesRequest>): TApiGetOrganizationUsageSeriesRequest {
+    return TApiGetOrganizationUsageSeriesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiGetOrganizationUsageSeriesRequest>): TApiGetOrganizationUsageSeriesRequest {
+    const message = createBaseTApiGetOrganizationUsageSeriesRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.organizationId = object.organizationId ?? "";
+    message.fromUnixNanos = object.fromUnixNanos ?? 0;
+    message.toUnixNanos = object.toUnixNanos ?? 0;
+    message.bucket = object.bucket ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiBillingUsageSeriesPoint(): TApiBillingUsageSeriesPoint {
+  return {
+    fromUnixNanos: 0,
+    toUnixNanos: 0,
+    computeSeconds: 0,
+    storageHours: 0,
+    estimatedCents: 0,
+    estimatedCentsValid: false,
+  };
+}
+
+export const TApiBillingUsageSeriesPoint: MessageFns<TApiBillingUsageSeriesPoint> = {
+  encode(message: TApiBillingUsageSeriesPoint, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.fromUnixNanos !== 0) {
+      writer.uint32(8).int64(message.fromUnixNanos);
+    }
+    if (message.toUnixNanos !== 0) {
+      writer.uint32(16).int64(message.toUnixNanos);
+    }
+    if (message.computeSeconds !== 0) {
+      writer.uint32(25).double(message.computeSeconds);
+    }
+    if (message.storageHours !== 0) {
+      writer.uint32(33).double(message.storageHours);
+    }
+    if (message.estimatedCents !== 0) {
+      writer.uint32(40).int64(message.estimatedCents);
+    }
+    if (message.estimatedCentsValid !== false) {
+      writer.uint32(48).bool(message.estimatedCentsValid);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiBillingUsageSeriesPoint {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiBillingUsageSeriesPoint();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.fromUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.toUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 3: {
+          if (tag !== 25) {
+            break;
+          }
+
+          message.computeSeconds = reader.double();
+          continue;
+        }
+        case 4: {
+          if (tag !== 33) {
+            break;
+          }
+
+          message.storageHours = reader.double();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.estimatedCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.estimatedCentsValid = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiBillingUsageSeriesPoint {
+    return {
+      fromUnixNanos: isSet(object.fromUnixNanos)
+        ? globalThis.Number(object.fromUnixNanos)
+        : isSet(object.from_unix_nanos)
+        ? globalThis.Number(object.from_unix_nanos)
+        : 0,
+      toUnixNanos: isSet(object.toUnixNanos)
+        ? globalThis.Number(object.toUnixNanos)
+        : isSet(object.to_unix_nanos)
+        ? globalThis.Number(object.to_unix_nanos)
+        : 0,
+      computeSeconds: isSet(object.computeSeconds)
+        ? globalThis.Number(object.computeSeconds)
+        : isSet(object.compute_seconds)
+        ? globalThis.Number(object.compute_seconds)
+        : 0,
+      storageHours: isSet(object.storageHours)
+        ? globalThis.Number(object.storageHours)
+        : isSet(object.storage_hours)
+        ? globalThis.Number(object.storage_hours)
+        : 0,
+      estimatedCents: isSet(object.estimatedCents)
+        ? globalThis.Number(object.estimatedCents)
+        : isSet(object.estimated_cents)
+        ? globalThis.Number(object.estimated_cents)
+        : 0,
+      estimatedCentsValid: isSet(object.estimatedCentsValid)
+        ? globalThis.Boolean(object.estimatedCentsValid)
+        : isSet(object.estimated_cents_valid)
+        ? globalThis.Boolean(object.estimated_cents_valid)
+        : false,
+    };
+  },
+
+  toJSON(message: TApiBillingUsageSeriesPoint): unknown {
+    const obj: any = {};
+    if (message.fromUnixNanos !== 0) {
+      obj.fromUnixNanos = Math.round(message.fromUnixNanos);
+    }
+    if (message.toUnixNanos !== 0) {
+      obj.toUnixNanos = Math.round(message.toUnixNanos);
+    }
+    if (message.computeSeconds !== 0) {
+      obj.computeSeconds = message.computeSeconds;
+    }
+    if (message.storageHours !== 0) {
+      obj.storageHours = message.storageHours;
+    }
+    if (message.estimatedCents !== 0) {
+      obj.estimatedCents = Math.round(message.estimatedCents);
+    }
+    if (message.estimatedCentsValid !== false) {
+      obj.estimatedCentsValid = message.estimatedCentsValid;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiBillingUsageSeriesPoint>): TApiBillingUsageSeriesPoint {
+    return TApiBillingUsageSeriesPoint.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiBillingUsageSeriesPoint>): TApiBillingUsageSeriesPoint {
+    const message = createBaseTApiBillingUsageSeriesPoint();
+    message.fromUnixNanos = object.fromUnixNanos ?? 0;
+    message.toUnixNanos = object.toUnixNanos ?? 0;
+    message.computeSeconds = object.computeSeconds ?? 0;
+    message.storageHours = object.storageHours ?? 0;
+    message.estimatedCents = object.estimatedCents ?? 0;
+    message.estimatedCentsValid = object.estimatedCentsValid ?? false;
+    return message;
+  },
+};
+
+function createBaseTApiGetOrganizationUsageSeriesResponse(): TApiGetOrganizationUsageSeriesResponse {
+  return { currency: "", periodFromUnixNanos: 0, periodToUnixNanos: 0, bucket: "", points: [], degraded: [] };
+}
+
+export const TApiGetOrganizationUsageSeriesResponse: MessageFns<TApiGetOrganizationUsageSeriesResponse> = {
+  encode(message: TApiGetOrganizationUsageSeriesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.currency !== "") {
+      writer.uint32(10).string(message.currency);
+    }
+    if (message.periodFromUnixNanos !== 0) {
+      writer.uint32(16).int64(message.periodFromUnixNanos);
+    }
+    if (message.periodToUnixNanos !== 0) {
+      writer.uint32(24).int64(message.periodToUnixNanos);
+    }
+    if (message.bucket !== "") {
+      writer.uint32(34).string(message.bucket);
+    }
+    for (const v of message.points) {
+      TApiBillingUsageSeriesPoint.encode(v!, writer.uint32(42).fork()).join();
+    }
+    writer.uint32(50).fork();
+    for (const v of message.degraded) {
+      writer.int32(v);
+    }
+    writer.join();
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetOrganizationUsageSeriesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetOrganizationUsageSeriesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.currency = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.periodFromUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.periodToUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.bucket = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.points.push(TApiBillingUsageSeriesPoint.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 6: {
+          if (tag === 48) {
+            message.degraded.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 50) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.degraded.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetOrganizationUsageSeriesResponse {
+    return {
+      currency: isSet(object.currency) ? globalThis.String(object.currency) : "",
+      periodFromUnixNanos: isSet(object.periodFromUnixNanos)
+        ? globalThis.Number(object.periodFromUnixNanos)
+        : isSet(object.period_from_unix_nanos)
+        ? globalThis.Number(object.period_from_unix_nanos)
+        : 0,
+      periodToUnixNanos: isSet(object.periodToUnixNanos)
+        ? globalThis.Number(object.periodToUnixNanos)
+        : isSet(object.period_to_unix_nanos)
+        ? globalThis.Number(object.period_to_unix_nanos)
+        : 0,
+      bucket: isSet(object.bucket) ? globalThis.String(object.bucket) : "",
+      points: globalThis.Array.isArray(object?.points)
+        ? object.points.map((e: any) => TApiBillingUsageSeriesPoint.fromJSON(e))
+        : [],
+      degraded: globalThis.Array.isArray(object?.degraded)
+        ? object.degraded.map((e: any) => tApiDegradationFromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TApiGetOrganizationUsageSeriesResponse): unknown {
+    const obj: any = {};
+    if (message.currency !== "") {
+      obj.currency = message.currency;
+    }
+    if (message.periodFromUnixNanos !== 0) {
+      obj.periodFromUnixNanos = Math.round(message.periodFromUnixNanos);
+    }
+    if (message.periodToUnixNanos !== 0) {
+      obj.periodToUnixNanos = Math.round(message.periodToUnixNanos);
+    }
+    if (message.bucket !== "") {
+      obj.bucket = message.bucket;
+    }
+    if (message.points?.length) {
+      obj.points = message.points.map((e) => TApiBillingUsageSeriesPoint.toJSON(e));
+    }
+    if (message.degraded?.length) {
+      obj.degraded = message.degraded.map((e) => tApiDegradationToJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetOrganizationUsageSeriesResponse>): TApiGetOrganizationUsageSeriesResponse {
+    return TApiGetOrganizationUsageSeriesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiGetOrganizationUsageSeriesResponse>): TApiGetOrganizationUsageSeriesResponse {
+    const message = createBaseTApiGetOrganizationUsageSeriesResponse();
+    message.currency = object.currency ?? "";
+    message.periodFromUnixNanos = object.periodFromUnixNanos ?? 0;
+    message.periodToUnixNanos = object.periodToUnixNanos ?? 0;
+    message.bucket = object.bucket ?? "";
+    message.points = object.points?.map((e) => TApiBillingUsageSeriesPoint.fromPartial(e)) || [];
+    message.degraded = object.degraded?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseTApiListOrganizationPaymentsRequest(): TApiListOrganizationPaymentsRequest {
+  return { apiKey: "", organizationId: "", page: 0, perPage: 0 };
+}
+
+export const TApiListOrganizationPaymentsRequest: MessageFns<TApiListOrganizationPaymentsRequest> = {
+  encode(message: TApiListOrganizationPaymentsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.organizationId !== "") {
+      writer.uint32(18).string(message.organizationId);
+    }
+    if (message.page !== 0) {
+      writer.uint32(24).int32(message.page);
+    }
+    if (message.perPage !== 0) {
+      writer.uint32(32).int32(message.perPage);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListOrganizationPaymentsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListOrganizationPaymentsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.organizationId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.page = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.perPage = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListOrganizationPaymentsRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      organizationId: isSet(object.organizationId)
+        ? globalThis.String(object.organizationId)
+        : isSet(object.organization_id)
+        ? globalThis.String(object.organization_id)
+        : "",
+      page: isSet(object.page) ? globalThis.Number(object.page) : 0,
+      perPage: isSet(object.perPage)
+        ? globalThis.Number(object.perPage)
+        : isSet(object.per_page)
+        ? globalThis.Number(object.per_page)
+        : 0,
+    };
+  },
+
+  toJSON(message: TApiListOrganizationPaymentsRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.organizationId !== "") {
+      obj.organizationId = message.organizationId;
+    }
+    if (message.page !== 0) {
+      obj.page = Math.round(message.page);
+    }
+    if (message.perPage !== 0) {
+      obj.perPage = Math.round(message.perPage);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListOrganizationPaymentsRequest>): TApiListOrganizationPaymentsRequest {
+    return TApiListOrganizationPaymentsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListOrganizationPaymentsRequest>): TApiListOrganizationPaymentsRequest {
+    const message = createBaseTApiListOrganizationPaymentsRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.organizationId = object.organizationId ?? "";
+    message.page = object.page ?? 0;
+    message.perPage = object.perPage ?? 0;
+    return message;
+  },
+};
+
+function createBaseTApiPayment(): TApiPayment {
+  return {
+    kind: "",
+    atUnixNanos: 0,
+    idempotencyKey: "",
+    offerCode: "",
+    offerName: "",
+    amountCents: 0,
+    currency: "",
+    credits: 0,
+    status: "",
+    invoiceId: "",
+    period: "",
+  };
+}
+
+export const TApiPayment: MessageFns<TApiPayment> = {
+  encode(message: TApiPayment, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.kind !== "") {
+      writer.uint32(10).string(message.kind);
+    }
+    if (message.atUnixNanos !== 0) {
+      writer.uint32(16).int64(message.atUnixNanos);
+    }
+    if (message.idempotencyKey !== "") {
+      writer.uint32(26).string(message.idempotencyKey);
+    }
+    if (message.offerCode !== "") {
+      writer.uint32(34).string(message.offerCode);
+    }
+    if (message.offerName !== "") {
+      writer.uint32(42).string(message.offerName);
+    }
+    if (message.amountCents !== 0) {
+      writer.uint32(48).int64(message.amountCents);
+    }
+    if (message.currency !== "") {
+      writer.uint32(58).string(message.currency);
+    }
+    if (message.credits !== 0) {
+      writer.uint32(65).double(message.credits);
+    }
+    if (message.status !== "") {
+      writer.uint32(74).string(message.status);
+    }
+    if (message.invoiceId !== "") {
+      writer.uint32(82).string(message.invoiceId);
+    }
+    if (message.period !== "") {
+      writer.uint32(90).string(message.period);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiPayment {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiPayment();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.kind = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.atUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.idempotencyKey = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.offerCode = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.offerName = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.amountCents = longToNumber(reader.int64());
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.currency = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 65) {
+            break;
+          }
+
+          message.credits = reader.double();
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.status = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.invoiceId = reader.string();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.period = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiPayment {
+    return {
+      kind: isSet(object.kind) ? globalThis.String(object.kind) : "",
+      atUnixNanos: isSet(object.atUnixNanos)
+        ? globalThis.Number(object.atUnixNanos)
+        : isSet(object.at_unix_nanos)
+        ? globalThis.Number(object.at_unix_nanos)
+        : 0,
+      idempotencyKey: isSet(object.idempotencyKey)
+        ? globalThis.String(object.idempotencyKey)
+        : isSet(object.idempotency_key)
+        ? globalThis.String(object.idempotency_key)
+        : "",
+      offerCode: isSet(object.offerCode)
+        ? globalThis.String(object.offerCode)
+        : isSet(object.offer_code)
+        ? globalThis.String(object.offer_code)
+        : "",
+      offerName: isSet(object.offerName)
+        ? globalThis.String(object.offerName)
+        : isSet(object.offer_name)
+        ? globalThis.String(object.offer_name)
+        : "",
+      amountCents: isSet(object.amountCents)
+        ? globalThis.Number(object.amountCents)
+        : isSet(object.amount_cents)
+        ? globalThis.Number(object.amount_cents)
+        : 0,
+      currency: isSet(object.currency) ? globalThis.String(object.currency) : "",
+      credits: isSet(object.credits) ? globalThis.Number(object.credits) : 0,
+      status: isSet(object.status) ? globalThis.String(object.status) : "",
+      invoiceId: isSet(object.invoiceId)
+        ? globalThis.String(object.invoiceId)
+        : isSet(object.invoice_id)
+        ? globalThis.String(object.invoice_id)
+        : "",
+      period: isSet(object.period) ? globalThis.String(object.period) : "",
+    };
+  },
+
+  toJSON(message: TApiPayment): unknown {
+    const obj: any = {};
+    if (message.kind !== "") {
+      obj.kind = message.kind;
+    }
+    if (message.atUnixNanos !== 0) {
+      obj.atUnixNanos = Math.round(message.atUnixNanos);
+    }
+    if (message.idempotencyKey !== "") {
+      obj.idempotencyKey = message.idempotencyKey;
+    }
+    if (message.offerCode !== "") {
+      obj.offerCode = message.offerCode;
+    }
+    if (message.offerName !== "") {
+      obj.offerName = message.offerName;
+    }
+    if (message.amountCents !== 0) {
+      obj.amountCents = Math.round(message.amountCents);
+    }
+    if (message.currency !== "") {
+      obj.currency = message.currency;
+    }
+    if (message.credits !== 0) {
+      obj.credits = message.credits;
+    }
+    if (message.status !== "") {
+      obj.status = message.status;
+    }
+    if (message.invoiceId !== "") {
+      obj.invoiceId = message.invoiceId;
+    }
+    if (message.period !== "") {
+      obj.period = message.period;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiPayment>): TApiPayment {
+    return TApiPayment.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiPayment>): TApiPayment {
+    const message = createBaseTApiPayment();
+    message.kind = object.kind ?? "";
+    message.atUnixNanos = object.atUnixNanos ?? 0;
+    message.idempotencyKey = object.idempotencyKey ?? "";
+    message.offerCode = object.offerCode ?? "";
+    message.offerName = object.offerName ?? "";
+    message.amountCents = object.amountCents ?? 0;
+    message.currency = object.currency ?? "";
+    message.credits = object.credits ?? 0;
+    message.status = object.status ?? "";
+    message.invoiceId = object.invoiceId ?? "";
+    message.period = object.period ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiListOrganizationPaymentsResponse(): TApiListOrganizationPaymentsResponse {
+  return { payments: [], hasMore: false };
+}
+
+export const TApiListOrganizationPaymentsResponse: MessageFns<TApiListOrganizationPaymentsResponse> = {
+  encode(message: TApiListOrganizationPaymentsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.payments) {
+      TApiPayment.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.hasMore !== false) {
+      writer.uint32(16).bool(message.hasMore);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListOrganizationPaymentsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListOrganizationPaymentsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.payments.push(TApiPayment.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.hasMore = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListOrganizationPaymentsResponse {
+    return {
+      payments: globalThis.Array.isArray(object?.payments)
+        ? object.payments.map((e: any) => TApiPayment.fromJSON(e))
+        : [],
+      hasMore: isSet(object.hasMore)
+        ? globalThis.Boolean(object.hasMore)
+        : isSet(object.has_more)
+        ? globalThis.Boolean(object.has_more)
+        : false,
+    };
+  },
+
+  toJSON(message: TApiListOrganizationPaymentsResponse): unknown {
+    const obj: any = {};
+    if (message.payments?.length) {
+      obj.payments = message.payments.map((e) => TApiPayment.toJSON(e));
+    }
+    if (message.hasMore !== false) {
+      obj.hasMore = message.hasMore;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListOrganizationPaymentsResponse>): TApiListOrganizationPaymentsResponse {
+    return TApiListOrganizationPaymentsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListOrganizationPaymentsResponse>): TApiListOrganizationPaymentsResponse {
+    const message = createBaseTApiListOrganizationPaymentsResponse();
+    message.payments = object.payments?.map((e) => TApiPayment.fromPartial(e)) || [];
+    message.hasMore = object.hasMore ?? false;
+    return message;
+  },
+};
+
+function createBaseTApiJobSpec(): TApiJobSpec {
+  return {
+    existingSandboxId: "",
+    newSandbox: undefined,
+    cmd: [],
+    script: undefined,
+    env: {},
+    path: "",
+    stdin: Buffer.alloc(0),
+    commandTimeoutSeconds: 0,
+    runDeadlineSeconds: 0,
+    maxOutputBytes: 0,
+    disposition: 0,
+    resumeIfSuspended: false,
+    name: "",
+    preRunScript: undefined,
+  };
+}
+
+export const TApiJobSpec: MessageFns<TApiJobSpec> = {
+  encode(message: TApiJobSpec, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.existingSandboxId !== "") {
+      writer.uint32(10).string(message.existingSandboxId);
+    }
+    if (message.newSandbox !== undefined) {
+      TApiJobSandboxSpec.encode(message.newSandbox, writer.uint32(18).fork()).join();
+    }
+    for (const v of message.cmd) {
+      writer.uint32(26).string(v!);
+    }
+    if (message.script !== undefined) {
+      TApiJobScriptSpec.encode(message.script, writer.uint32(98).fork()).join();
+    }
+    globalThis.Object.entries(message.env).forEach(([key, value]: [string, string]) => {
+      TApiJobSpec_EnvEntry.encode({ key: key as any, value }, writer.uint32(34).fork()).join();
+    });
+    if (message.path !== "") {
+      writer.uint32(42).string(message.path);
+    }
+    if (message.stdin.length !== 0) {
+      writer.uint32(50).bytes(message.stdin);
+    }
+    if (message.commandTimeoutSeconds !== 0) {
+      writer.uint32(56).int32(message.commandTimeoutSeconds);
+    }
+    if (message.runDeadlineSeconds !== 0) {
+      writer.uint32(64).int32(message.runDeadlineSeconds);
+    }
+    if (message.maxOutputBytes !== 0) {
+      writer.uint32(72).int32(message.maxOutputBytes);
+    }
+    if (message.disposition !== 0) {
+      writer.uint32(80).int32(message.disposition);
+    }
+    if (message.resumeIfSuspended !== false) {
+      writer.uint32(88).bool(message.resumeIfSuspended);
+    }
+    if (message.name !== "") {
+      writer.uint32(106).string(message.name);
+    }
+    if (message.preRunScript !== undefined) {
+      TApiJobScriptSpec.encode(message.preRunScript, writer.uint32(114).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiJobSpec {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiJobSpec();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.existingSandboxId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.newSandbox = TApiJobSandboxSpec.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.cmd.push(reader.string());
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.script = TApiJobScriptSpec.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          const entry4 = TApiJobSpec_EnvEntry.decode(reader, reader.uint32());
+          if (entry4.value !== undefined) {
+            message.env[entry4.key] = entry4.value;
+          }
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.path = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.stdin = Buffer.from(reader.bytes());
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.commandTimeoutSeconds = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.runDeadlineSeconds = reader.int32();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.maxOutputBytes = reader.int32();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.disposition = reader.int32() as any;
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.resumeIfSuspended = reader.bool();
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.preRunScript = TApiJobScriptSpec.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiJobSpec {
+    return {
+      existingSandboxId: isSet(object.existingSandboxId)
+        ? globalThis.String(object.existingSandboxId)
+        : isSet(object.existing_sandbox_id)
+        ? globalThis.String(object.existing_sandbox_id)
+        : "",
+      newSandbox: isSet(object.newSandbox)
+        ? TApiJobSandboxSpec.fromJSON(object.newSandbox)
+        : isSet(object.new_sandbox)
+        ? TApiJobSandboxSpec.fromJSON(object.new_sandbox)
+        : undefined,
+      cmd: globalThis.Array.isArray(object?.cmd) ? object.cmd.map((e: any) => globalThis.String(e)) : [],
+      script: isSet(object.script) ? TApiJobScriptSpec.fromJSON(object.script) : undefined,
+      env: isObject(object.env)
+        ? (globalThis.Object.entries(object.env) as [string, any][]).reduce(
+          (acc: { [key: string]: string }, [key, value]: [string, any]) => {
+            acc[key] = globalThis.String(value);
+            return acc;
+          },
+          {},
+        )
+        : {},
+      path: isSet(object.path) ? globalThis.String(object.path) : "",
+      stdin: isSet(object.stdin) ? Buffer.from(bytesFromBase64(object.stdin)) : Buffer.alloc(0),
+      commandTimeoutSeconds: isSet(object.commandTimeoutSeconds)
+        ? globalThis.Number(object.commandTimeoutSeconds)
+        : isSet(object.command_timeout_seconds)
+        ? globalThis.Number(object.command_timeout_seconds)
+        : 0,
+      runDeadlineSeconds: isSet(object.runDeadlineSeconds)
+        ? globalThis.Number(object.runDeadlineSeconds)
+        : isSet(object.run_deadline_seconds)
+        ? globalThis.Number(object.run_deadline_seconds)
+        : 0,
+      maxOutputBytes: isSet(object.maxOutputBytes)
+        ? globalThis.Number(object.maxOutputBytes)
+        : isSet(object.max_output_bytes)
+        ? globalThis.Number(object.max_output_bytes)
+        : 0,
+      disposition: isSet(object.disposition) ? tApiSandboxDispositionFromJSON(object.disposition) : 0,
+      resumeIfSuspended: isSet(object.resumeIfSuspended)
+        ? globalThis.Boolean(object.resumeIfSuspended)
+        : isSet(object.resume_if_suspended)
+        ? globalThis.Boolean(object.resume_if_suspended)
+        : false,
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      preRunScript: isSet(object.preRunScript)
+        ? TApiJobScriptSpec.fromJSON(object.preRunScript)
+        : isSet(object.pre_run_script)
+        ? TApiJobScriptSpec.fromJSON(object.pre_run_script)
+        : undefined,
+    };
+  },
+
+  toJSON(message: TApiJobSpec): unknown {
+    const obj: any = {};
+    if (message.existingSandboxId !== "") {
+      obj.existingSandboxId = message.existingSandboxId;
+    }
+    if (message.newSandbox !== undefined) {
+      obj.newSandbox = TApiJobSandboxSpec.toJSON(message.newSandbox);
+    }
+    if (message.cmd?.length) {
+      obj.cmd = message.cmd;
+    }
+    if (message.script !== undefined) {
+      obj.script = TApiJobScriptSpec.toJSON(message.script);
+    }
+    if (message.env) {
+      const entries = globalThis.Object.entries(message.env) as [string, string][];
+      if (entries.length > 0) {
+        obj.env = {};
+        entries.forEach(([k, v]) => {
+          obj.env[k] = v;
+        });
+      }
+    }
+    if (message.path !== "") {
+      obj.path = message.path;
+    }
+    if (message.stdin.length !== 0) {
+      obj.stdin = base64FromBytes(message.stdin);
+    }
+    if (message.commandTimeoutSeconds !== 0) {
+      obj.commandTimeoutSeconds = Math.round(message.commandTimeoutSeconds);
+    }
+    if (message.runDeadlineSeconds !== 0) {
+      obj.runDeadlineSeconds = Math.round(message.runDeadlineSeconds);
+    }
+    if (message.maxOutputBytes !== 0) {
+      obj.maxOutputBytes = Math.round(message.maxOutputBytes);
+    }
+    if (message.disposition !== 0) {
+      obj.disposition = tApiSandboxDispositionToJSON(message.disposition);
+    }
+    if (message.resumeIfSuspended !== false) {
+      obj.resumeIfSuspended = message.resumeIfSuspended;
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.preRunScript !== undefined) {
+      obj.preRunScript = TApiJobScriptSpec.toJSON(message.preRunScript);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiJobSpec>): TApiJobSpec {
+    return TApiJobSpec.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiJobSpec>): TApiJobSpec {
+    const message = createBaseTApiJobSpec();
+    message.existingSandboxId = object.existingSandboxId ?? "";
+    message.newSandbox = (object.newSandbox !== undefined && object.newSandbox !== null)
+      ? TApiJobSandboxSpec.fromPartial(object.newSandbox)
+      : undefined;
+    message.cmd = object.cmd?.map((e) => e) || [];
+    message.script = (object.script !== undefined && object.script !== null)
+      ? TApiJobScriptSpec.fromPartial(object.script)
+      : undefined;
+    message.env = (globalThis.Object.entries(object.env ?? {}) as [string, string][]).reduce(
+      (acc: { [key: string]: string }, [key, value]: [string, string]) => {
+        if (value !== undefined) {
+          acc[key] = globalThis.String(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    message.path = object.path ?? "";
+    message.stdin = object.stdin ?? Buffer.alloc(0);
+    message.commandTimeoutSeconds = object.commandTimeoutSeconds ?? 0;
+    message.runDeadlineSeconds = object.runDeadlineSeconds ?? 0;
+    message.maxOutputBytes = object.maxOutputBytes ?? 0;
+    message.disposition = object.disposition ?? 0;
+    message.resumeIfSuspended = object.resumeIfSuspended ?? false;
+    message.name = object.name ?? "";
+    message.preRunScript = (object.preRunScript !== undefined && object.preRunScript !== null)
+      ? TApiJobScriptSpec.fromPartial(object.preRunScript)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiJobSpec_EnvEntry(): TApiJobSpec_EnvEntry {
+  return { key: "", value: "" };
+}
+
+export const TApiJobSpec_EnvEntry: MessageFns<TApiJobSpec_EnvEntry> = {
+  encode(message: TApiJobSpec_EnvEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiJobSpec_EnvEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiJobSpec_EnvEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiJobSpec_EnvEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+    };
+  },
+
+  toJSON(message: TApiJobSpec_EnvEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiJobSpec_EnvEntry>): TApiJobSpec_EnvEntry {
+    return TApiJobSpec_EnvEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiJobSpec_EnvEntry>): TApiJobSpec_EnvEntry {
+    const message = createBaseTApiJobSpec_EnvEntry();
+    message.key = object.key ?? "";
+    message.value = object.value ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiJobSandboxSpec(): TApiJobSandboxSpec {
+  return { template: undefined, network: undefined, name: "" };
+}
+
+export const TApiJobSandboxSpec: MessageFns<TApiJobSandboxSpec> = {
+  encode(message: TApiJobSandboxSpec, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.template !== undefined) {
+      TemplateBinding.encode(message.template, writer.uint32(10).fork()).join();
+    }
+    if (message.network !== undefined) {
+      NetworkPolicy.encode(message.network, writer.uint32(18).fork()).join();
+    }
+    if (message.name !== "") {
+      writer.uint32(26).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiJobSandboxSpec {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiJobSandboxSpec();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.template = TemplateBinding.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.network = NetworkPolicy.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiJobSandboxSpec {
+    return {
+      template: isSet(object.template) ? TemplateBinding.fromJSON(object.template) : undefined,
+      network: isSet(object.network) ? NetworkPolicy.fromJSON(object.network) : undefined,
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+    };
+  },
+
+  toJSON(message: TApiJobSandboxSpec): unknown {
+    const obj: any = {};
+    if (message.template !== undefined) {
+      obj.template = TemplateBinding.toJSON(message.template);
+    }
+    if (message.network !== undefined) {
+      obj.network = NetworkPolicy.toJSON(message.network);
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiJobSandboxSpec>): TApiJobSandboxSpec {
+    return TApiJobSandboxSpec.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiJobSandboxSpec>): TApiJobSandboxSpec {
+    const message = createBaseTApiJobSandboxSpec();
+    message.template = (object.template !== undefined && object.template !== null)
+      ? TemplateBinding.fromPartial(object.template)
+      : undefined;
+    message.network = (object.network !== undefined && object.network !== null)
+      ? NetworkPolicy.fromPartial(object.network)
+      : undefined;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiJobScriptSpec(): TApiJobScriptSpec {
+  return { body: Buffer.alloc(0), interpreter: "", args: [], filename: "" };
+}
+
+export const TApiJobScriptSpec: MessageFns<TApiJobScriptSpec> = {
+  encode(message: TApiJobScriptSpec, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.body.length !== 0) {
+      writer.uint32(10).bytes(message.body);
+    }
+    if (message.interpreter !== "") {
+      writer.uint32(18).string(message.interpreter);
+    }
+    for (const v of message.args) {
+      writer.uint32(26).string(v!);
+    }
+    if (message.filename !== "") {
+      writer.uint32(34).string(message.filename);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiJobScriptSpec {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiJobScriptSpec();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.body = Buffer.from(reader.bytes());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.interpreter = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.args.push(reader.string());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.filename = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiJobScriptSpec {
+    return {
+      body: isSet(object.body) ? Buffer.from(bytesFromBase64(object.body)) : Buffer.alloc(0),
+      interpreter: isSet(object.interpreter) ? globalThis.String(object.interpreter) : "",
+      args: globalThis.Array.isArray(object?.args) ? object.args.map((e: any) => globalThis.String(e)) : [],
+      filename: isSet(object.filename) ? globalThis.String(object.filename) : "",
+    };
+  },
+
+  toJSON(message: TApiJobScriptSpec): unknown {
+    const obj: any = {};
+    if (message.body.length !== 0) {
+      obj.body = base64FromBytes(message.body);
+    }
+    if (message.interpreter !== "") {
+      obj.interpreter = message.interpreter;
+    }
+    if (message.args?.length) {
+      obj.args = message.args;
+    }
+    if (message.filename !== "") {
+      obj.filename = message.filename;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiJobScriptSpec>): TApiJobScriptSpec {
+    return TApiJobScriptSpec.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiJobScriptSpec>): TApiJobScriptSpec {
+    const message = createBaseTApiJobScriptSpec();
+    message.body = object.body ?? Buffer.alloc(0);
+    message.interpreter = object.interpreter ?? "";
+    message.args = object.args?.map((e) => e) || [];
+    message.filename = object.filename ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiRunJobRequest(): TApiRunJobRequest {
+  return { apiKey: "", idempotencyKey: "", spec: undefined };
+}
+
+export const TApiRunJobRequest: MessageFns<TApiRunJobRequest> = {
+  encode(message: TApiRunJobRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.idempotencyKey !== "") {
+      writer.uint32(18).string(message.idempotencyKey);
+    }
+    if (message.spec !== undefined) {
+      TApiJobSpec.encode(message.spec, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiRunJobRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiRunJobRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.idempotencyKey = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.spec = TApiJobSpec.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiRunJobRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      idempotencyKey: isSet(object.idempotencyKey)
+        ? globalThis.String(object.idempotencyKey)
+        : isSet(object.idempotency_key)
+        ? globalThis.String(object.idempotency_key)
+        : "",
+      spec: isSet(object.spec) ? TApiJobSpec.fromJSON(object.spec) : undefined,
+    };
+  },
+
+  toJSON(message: TApiRunJobRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.idempotencyKey !== "") {
+      obj.idempotencyKey = message.idempotencyKey;
+    }
+    if (message.spec !== undefined) {
+      obj.spec = TApiJobSpec.toJSON(message.spec);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiRunJobRequest>): TApiRunJobRequest {
+    return TApiRunJobRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiRunJobRequest>): TApiRunJobRequest {
+    const message = createBaseTApiRunJobRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.idempotencyKey = object.idempotencyKey ?? "";
+    message.spec = (object.spec !== undefined && object.spec !== null)
+      ? TApiJobSpec.fromPartial(object.spec)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiRunJobResponse(): TApiRunJobResponse {
+  return { run: undefined };
+}
+
+export const TApiRunJobResponse: MessageFns<TApiRunJobResponse> = {
+  encode(message: TApiRunJobResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.run !== undefined) {
+      TApiJobRun.encode(message.run, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiRunJobResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiRunJobResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.run = TApiJobRun.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiRunJobResponse {
+    return { run: isSet(object.run) ? TApiJobRun.fromJSON(object.run) : undefined };
+  },
+
+  toJSON(message: TApiRunJobResponse): unknown {
+    const obj: any = {};
+    if (message.run !== undefined) {
+      obj.run = TApiJobRun.toJSON(message.run);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiRunJobResponse>): TApiRunJobResponse {
+    return TApiRunJobResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiRunJobResponse>): TApiRunJobResponse {
+    const message = createBaseTApiRunJobResponse();
+    message.run = (object.run !== undefined && object.run !== null) ? TApiJobRun.fromPartial(object.run) : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiStartJobRequest(): TApiStartJobRequest {
+  return { apiKey: "", idempotencyKey: "", spec: undefined };
+}
+
+export const TApiStartJobRequest: MessageFns<TApiStartJobRequest> = {
+  encode(message: TApiStartJobRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.idempotencyKey !== "") {
+      writer.uint32(18).string(message.idempotencyKey);
+    }
+    if (message.spec !== undefined) {
+      TApiJobSpec.encode(message.spec, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiStartJobRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiStartJobRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.idempotencyKey = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.spec = TApiJobSpec.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiStartJobRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      idempotencyKey: isSet(object.idempotencyKey)
+        ? globalThis.String(object.idempotencyKey)
+        : isSet(object.idempotency_key)
+        ? globalThis.String(object.idempotency_key)
+        : "",
+      spec: isSet(object.spec) ? TApiJobSpec.fromJSON(object.spec) : undefined,
+    };
+  },
+
+  toJSON(message: TApiStartJobRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.idempotencyKey !== "") {
+      obj.idempotencyKey = message.idempotencyKey;
+    }
+    if (message.spec !== undefined) {
+      obj.spec = TApiJobSpec.toJSON(message.spec);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiStartJobRequest>): TApiStartJobRequest {
+    return TApiStartJobRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiStartJobRequest>): TApiStartJobRequest {
+    const message = createBaseTApiStartJobRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.idempotencyKey = object.idempotencyKey ?? "";
+    message.spec = (object.spec !== undefined && object.spec !== null)
+      ? TApiJobSpec.fromPartial(object.spec)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiStartJobResponse(): TApiStartJobResponse {
+  return { runId: "", alreadyRunning: false };
+}
+
+export const TApiStartJobResponse: MessageFns<TApiStartJobResponse> = {
+  encode(message: TApiStartJobResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.runId !== "") {
+      writer.uint32(10).string(message.runId);
+    }
+    if (message.alreadyRunning !== false) {
+      writer.uint32(16).bool(message.alreadyRunning);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiStartJobResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiStartJobResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.runId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.alreadyRunning = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiStartJobResponse {
+    return {
+      runId: isSet(object.runId)
+        ? globalThis.String(object.runId)
+        : isSet(object.run_id)
+        ? globalThis.String(object.run_id)
+        : "",
+      alreadyRunning: isSet(object.alreadyRunning)
+        ? globalThis.Boolean(object.alreadyRunning)
+        : isSet(object.already_running)
+        ? globalThis.Boolean(object.already_running)
+        : false,
+    };
+  },
+
+  toJSON(message: TApiStartJobResponse): unknown {
+    const obj: any = {};
+    if (message.runId !== "") {
+      obj.runId = message.runId;
+    }
+    if (message.alreadyRunning !== false) {
+      obj.alreadyRunning = message.alreadyRunning;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiStartJobResponse>): TApiStartJobResponse {
+    return TApiStartJobResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiStartJobResponse>): TApiStartJobResponse {
+    const message = createBaseTApiStartJobResponse();
+    message.runId = object.runId ?? "";
+    message.alreadyRunning = object.alreadyRunning ?? false;
+    return message;
+  },
+};
+
+function createBaseTApiGetJobRunRequest(): TApiGetJobRunRequest {
+  return { apiKey: "", runId: "" };
+}
+
+export const TApiGetJobRunRequest: MessageFns<TApiGetJobRunRequest> = {
+  encode(message: TApiGetJobRunRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.runId !== "") {
+      writer.uint32(18).string(message.runId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetJobRunRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetJobRunRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.runId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetJobRunRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      runId: isSet(object.runId)
+        ? globalThis.String(object.runId)
+        : isSet(object.run_id)
+        ? globalThis.String(object.run_id)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiGetJobRunRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.runId !== "") {
+      obj.runId = message.runId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetJobRunRequest>): TApiGetJobRunRequest {
+    return TApiGetJobRunRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiGetJobRunRequest>): TApiGetJobRunRequest {
+    const message = createBaseTApiGetJobRunRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.runId = object.runId ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiGetJobRunResponse(): TApiGetJobRunResponse {
+  return { detail: undefined };
+}
+
+export const TApiGetJobRunResponse: MessageFns<TApiGetJobRunResponse> = {
+  encode(message: TApiGetJobRunResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.detail !== undefined) {
+      TApiJobRunDetail.encode(message.detail, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetJobRunResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetJobRunResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.detail = TApiJobRunDetail.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetJobRunResponse {
+    return { detail: isSet(object.detail) ? TApiJobRunDetail.fromJSON(object.detail) : undefined };
+  },
+
+  toJSON(message: TApiGetJobRunResponse): unknown {
+    const obj: any = {};
+    if (message.detail !== undefined) {
+      obj.detail = TApiJobRunDetail.toJSON(message.detail);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetJobRunResponse>): TApiGetJobRunResponse {
+    return TApiGetJobRunResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiGetJobRunResponse>): TApiGetJobRunResponse {
+    const message = createBaseTApiGetJobRunResponse();
+    message.detail = (object.detail !== undefined && object.detail !== null)
+      ? TApiJobRunDetail.fromPartial(object.detail)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiListJobRunsRequest(): TApiListJobRunsRequest {
+  return { apiKey: "", sandboxId: "", scheduleId: "", status: 0, pageSize: 0, pageToken: "" };
+}
+
+export const TApiListJobRunsRequest: MessageFns<TApiListJobRunsRequest> = {
+  encode(message: TApiListJobRunsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.sandboxId !== "") {
+      writer.uint32(18).string(message.sandboxId);
+    }
+    if (message.scheduleId !== "") {
+      writer.uint32(26).string(message.scheduleId);
+    }
+    if (message.status !== 0) {
+      writer.uint32(32).int32(message.status);
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(40).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(50).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListJobRunsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListJobRunsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.sandboxId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.scheduleId = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.status = reader.int32() as any;
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListJobRunsRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      sandboxId: isSet(object.sandboxId)
+        ? globalThis.String(object.sandboxId)
+        : isSet(object.sandbox_id)
+        ? globalThis.String(object.sandbox_id)
+        : "",
+      scheduleId: isSet(object.scheduleId)
+        ? globalThis.String(object.scheduleId)
+        : isSet(object.schedule_id)
+        ? globalThis.String(object.schedule_id)
+        : "",
+      status: isSet(object.status) ? tApiJobRunStatusFromJSON(object.status) : 0,
+      pageSize: isSet(object.pageSize)
+        ? globalThis.Number(object.pageSize)
+        : isSet(object.page_size)
+        ? globalThis.Number(object.page_size)
+        : 0,
+      pageToken: isSet(object.pageToken)
+        ? globalThis.String(object.pageToken)
+        : isSet(object.page_token)
+        ? globalThis.String(object.page_token)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiListJobRunsRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.sandboxId !== "") {
+      obj.sandboxId = message.sandboxId;
+    }
+    if (message.scheduleId !== "") {
+      obj.scheduleId = message.scheduleId;
+    }
+    if (message.status !== 0) {
+      obj.status = tApiJobRunStatusToJSON(message.status);
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListJobRunsRequest>): TApiListJobRunsRequest {
+    return TApiListJobRunsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListJobRunsRequest>): TApiListJobRunsRequest {
+    const message = createBaseTApiListJobRunsRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.sandboxId = object.sandboxId ?? "";
+    message.scheduleId = object.scheduleId ?? "";
+    message.status = object.status ?? 0;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiListJobRunsResponse(): TApiListJobRunsResponse {
+  return { runs: [], nextPageToken: "" };
+}
+
+export const TApiListJobRunsResponse: MessageFns<TApiListJobRunsResponse> = {
+  encode(message: TApiListJobRunsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.runs) {
+      TApiJobRun.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListJobRunsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListJobRunsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.runs.push(TApiJobRun.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListJobRunsResponse {
+    return {
+      runs: globalThis.Array.isArray(object?.runs) ? object.runs.map((e: any) => TApiJobRun.fromJSON(e)) : [],
+      nextPageToken: isSet(object.nextPageToken)
+        ? globalThis.String(object.nextPageToken)
+        : isSet(object.next_page_token)
+        ? globalThis.String(object.next_page_token)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiListJobRunsResponse): unknown {
+    const obj: any = {};
+    if (message.runs?.length) {
+      obj.runs = message.runs.map((e) => TApiJobRun.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListJobRunsResponse>): TApiListJobRunsResponse {
+    return TApiListJobRunsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListJobRunsResponse>): TApiListJobRunsResponse {
+    const message = createBaseTApiListJobRunsResponse();
+    message.runs = object.runs?.map((e) => TApiJobRun.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiCancelJobRunRequest(): TApiCancelJobRunRequest {
+  return { apiKey: "", runId: "" };
+}
+
+export const TApiCancelJobRunRequest: MessageFns<TApiCancelJobRunRequest> = {
+  encode(message: TApiCancelJobRunRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.runId !== "") {
+      writer.uint32(18).string(message.runId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiCancelJobRunRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiCancelJobRunRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.runId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiCancelJobRunRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      runId: isSet(object.runId)
+        ? globalThis.String(object.runId)
+        : isSet(object.run_id)
+        ? globalThis.String(object.run_id)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiCancelJobRunRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.runId !== "") {
+      obj.runId = message.runId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiCancelJobRunRequest>): TApiCancelJobRunRequest {
+    return TApiCancelJobRunRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiCancelJobRunRequest>): TApiCancelJobRunRequest {
+    const message = createBaseTApiCancelJobRunRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.runId = object.runId ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiCancelJobRunResponse(): TApiCancelJobRunResponse {
+  return {};
+}
+
+export const TApiCancelJobRunResponse: MessageFns<TApiCancelJobRunResponse> = {
+  encode(_: TApiCancelJobRunResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiCancelJobRunResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiCancelJobRunResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): TApiCancelJobRunResponse {
+    return {};
+  },
+
+  toJSON(_: TApiCancelJobRunResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiCancelJobRunResponse>): TApiCancelJobRunResponse {
+    return TApiCancelJobRunResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<TApiCancelJobRunResponse>): TApiCancelJobRunResponse {
+    const message = createBaseTApiCancelJobRunResponse();
+    return message;
+  },
+};
+
+function createBaseTApiJobRun(): TApiJobRun {
+  return {
+    runId: "",
+    status: 0,
+    sandboxId: "",
+    createdSandbox: false,
+    scheduleId: "",
+    startedAtUnixNanos: 0,
+    finishedAtUnixNanos: 0,
+    result: undefined,
+    failure: "",
+    cleanupFailed: false,
+    availableActions: [],
+    name: "",
+  };
+}
+
+export const TApiJobRun: MessageFns<TApiJobRun> = {
+  encode(message: TApiJobRun, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.runId !== "") {
+      writer.uint32(10).string(message.runId);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    if (message.sandboxId !== "") {
+      writer.uint32(26).string(message.sandboxId);
+    }
+    if (message.createdSandbox !== false) {
+      writer.uint32(32).bool(message.createdSandbox);
+    }
+    if (message.scheduleId !== "") {
+      writer.uint32(42).string(message.scheduleId);
+    }
+    if (message.startedAtUnixNanos !== 0) {
+      writer.uint32(48).int64(message.startedAtUnixNanos);
+    }
+    if (message.finishedAtUnixNanos !== 0) {
+      writer.uint32(56).int64(message.finishedAtUnixNanos);
+    }
+    if (message.result !== undefined) {
+      TApiJobResult.encode(message.result, writer.uint32(66).fork()).join();
+    }
+    if (message.failure !== "") {
+      writer.uint32(74).string(message.failure);
+    }
+    if (message.cleanupFailed !== false) {
+      writer.uint32(80).bool(message.cleanupFailed);
+    }
+    writer.uint32(90).fork();
+    for (const v of message.availableActions) {
+      writer.int32(v);
+    }
+    writer.join();
+    if (message.name !== "") {
+      writer.uint32(98).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiJobRun {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiJobRun();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.runId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32() as any;
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.sandboxId = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.createdSandbox = reader.bool();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.scheduleId = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.startedAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.finishedAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.result = TApiJobResult.decode(reader, reader.uint32());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.failure = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.cleanupFailed = reader.bool();
+          continue;
+        }
+        case 11: {
+          if (tag === 88) {
+            message.availableActions.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 90) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.availableActions.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiJobRun {
+    return {
+      runId: isSet(object.runId)
+        ? globalThis.String(object.runId)
+        : isSet(object.run_id)
+        ? globalThis.String(object.run_id)
+        : "",
+      status: isSet(object.status) ? tApiJobRunStatusFromJSON(object.status) : 0,
+      sandboxId: isSet(object.sandboxId)
+        ? globalThis.String(object.sandboxId)
+        : isSet(object.sandbox_id)
+        ? globalThis.String(object.sandbox_id)
+        : "",
+      createdSandbox: isSet(object.createdSandbox)
+        ? globalThis.Boolean(object.createdSandbox)
+        : isSet(object.created_sandbox)
+        ? globalThis.Boolean(object.created_sandbox)
+        : false,
+      scheduleId: isSet(object.scheduleId)
+        ? globalThis.String(object.scheduleId)
+        : isSet(object.schedule_id)
+        ? globalThis.String(object.schedule_id)
+        : "",
+      startedAtUnixNanos: isSet(object.startedAtUnixNanos)
+        ? globalThis.Number(object.startedAtUnixNanos)
+        : isSet(object.started_at_unix_nanos)
+        ? globalThis.Number(object.started_at_unix_nanos)
+        : 0,
+      finishedAtUnixNanos: isSet(object.finishedAtUnixNanos)
+        ? globalThis.Number(object.finishedAtUnixNanos)
+        : isSet(object.finished_at_unix_nanos)
+        ? globalThis.Number(object.finished_at_unix_nanos)
+        : 0,
+      result: isSet(object.result) ? TApiJobResult.fromJSON(object.result) : undefined,
+      failure: isSet(object.failure) ? globalThis.String(object.failure) : "",
+      cleanupFailed: isSet(object.cleanupFailed)
+        ? globalThis.Boolean(object.cleanupFailed)
+        : isSet(object.cleanup_failed)
+        ? globalThis.Boolean(object.cleanup_failed)
+        : false,
+      availableActions: globalThis.Array.isArray(object?.availableActions)
+        ? object.availableActions.map((e: any) => tApiJobRunActionFromJSON(e))
+        : globalThis.Array.isArray(object?.available_actions)
+        ? object.available_actions.map((e: any) => tApiJobRunActionFromJSON(e))
+        : [],
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+    };
+  },
+
+  toJSON(message: TApiJobRun): unknown {
+    const obj: any = {};
+    if (message.runId !== "") {
+      obj.runId = message.runId;
+    }
+    if (message.status !== 0) {
+      obj.status = tApiJobRunStatusToJSON(message.status);
+    }
+    if (message.sandboxId !== "") {
+      obj.sandboxId = message.sandboxId;
+    }
+    if (message.createdSandbox !== false) {
+      obj.createdSandbox = message.createdSandbox;
+    }
+    if (message.scheduleId !== "") {
+      obj.scheduleId = message.scheduleId;
+    }
+    if (message.startedAtUnixNanos !== 0) {
+      obj.startedAtUnixNanos = Math.round(message.startedAtUnixNanos);
+    }
+    if (message.finishedAtUnixNanos !== 0) {
+      obj.finishedAtUnixNanos = Math.round(message.finishedAtUnixNanos);
+    }
+    if (message.result !== undefined) {
+      obj.result = TApiJobResult.toJSON(message.result);
+    }
+    if (message.failure !== "") {
+      obj.failure = message.failure;
+    }
+    if (message.cleanupFailed !== false) {
+      obj.cleanupFailed = message.cleanupFailed;
+    }
+    if (message.availableActions?.length) {
+      obj.availableActions = message.availableActions.map((e) => tApiJobRunActionToJSON(e));
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiJobRun>): TApiJobRun {
+    return TApiJobRun.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiJobRun>): TApiJobRun {
+    const message = createBaseTApiJobRun();
+    message.runId = object.runId ?? "";
+    message.status = object.status ?? 0;
+    message.sandboxId = object.sandboxId ?? "";
+    message.createdSandbox = object.createdSandbox ?? false;
+    message.scheduleId = object.scheduleId ?? "";
+    message.startedAtUnixNanos = object.startedAtUnixNanos ?? 0;
+    message.finishedAtUnixNanos = object.finishedAtUnixNanos ?? 0;
+    message.result = (object.result !== undefined && object.result !== null)
+      ? TApiJobResult.fromPartial(object.result)
+      : undefined;
+    message.failure = object.failure ?? "";
+    message.cleanupFailed = object.cleanupFailed ?? false;
+    message.availableActions = object.availableActions?.map((e) => e) || [];
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiJobRunDetail(): TApiJobRunDetail {
+  return { run: undefined, spec: undefined, timeline: [] };
+}
+
+export const TApiJobRunDetail: MessageFns<TApiJobRunDetail> = {
+  encode(message: TApiJobRunDetail, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.run !== undefined) {
+      TApiJobRun.encode(message.run, writer.uint32(10).fork()).join();
+    }
+    if (message.spec !== undefined) {
+      TApiJobSpec.encode(message.spec, writer.uint32(18).fork()).join();
+    }
+    for (const v of message.timeline) {
+      TApiJobRunTimelineEntry.encode(v!, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiJobRunDetail {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiJobRunDetail();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.run = TApiJobRun.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.spec = TApiJobSpec.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.timeline.push(TApiJobRunTimelineEntry.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiJobRunDetail {
+    return {
+      run: isSet(object.run) ? TApiJobRun.fromJSON(object.run) : undefined,
+      spec: isSet(object.spec) ? TApiJobSpec.fromJSON(object.spec) : undefined,
+      timeline: globalThis.Array.isArray(object?.timeline)
+        ? object.timeline.map((e: any) => TApiJobRunTimelineEntry.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TApiJobRunDetail): unknown {
+    const obj: any = {};
+    if (message.run !== undefined) {
+      obj.run = TApiJobRun.toJSON(message.run);
+    }
+    if (message.spec !== undefined) {
+      obj.spec = TApiJobSpec.toJSON(message.spec);
+    }
+    if (message.timeline?.length) {
+      obj.timeline = message.timeline.map((e) => TApiJobRunTimelineEntry.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiJobRunDetail>): TApiJobRunDetail {
+    return TApiJobRunDetail.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiJobRunDetail>): TApiJobRunDetail {
+    const message = createBaseTApiJobRunDetail();
+    message.run = (object.run !== undefined && object.run !== null) ? TApiJobRun.fromPartial(object.run) : undefined;
+    message.spec = (object.spec !== undefined && object.spec !== null)
+      ? TApiJobSpec.fromPartial(object.spec)
+      : undefined;
+    message.timeline = object.timeline?.map((e) => TApiJobRunTimelineEntry.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseTApiJobRunTimelineEntry(): TApiJobRunTimelineEntry {
+  return { name: "", status: 0, attempt: 0, startedAtUnixNanos: 0, finishedAtUnixNanos: 0, failure: "" };
+}
+
+export const TApiJobRunTimelineEntry: MessageFns<TApiJobRunTimelineEntry> = {
+  encode(message: TApiJobRunTimelineEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    if (message.attempt !== 0) {
+      writer.uint32(24).int32(message.attempt);
+    }
+    if (message.startedAtUnixNanos !== 0) {
+      writer.uint32(32).int64(message.startedAtUnixNanos);
+    }
+    if (message.finishedAtUnixNanos !== 0) {
+      writer.uint32(40).int64(message.finishedAtUnixNanos);
+    }
+    if (message.failure !== "") {
+      writer.uint32(50).string(message.failure);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiJobRunTimelineEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiJobRunTimelineEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32() as any;
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.attempt = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.startedAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.finishedAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.failure = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiJobRunTimelineEntry {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      status: isSet(object.status) ? tApiJobRunTimelineStatusFromJSON(object.status) : 0,
+      attempt: isSet(object.attempt) ? globalThis.Number(object.attempt) : 0,
+      startedAtUnixNanos: isSet(object.startedAtUnixNanos)
+        ? globalThis.Number(object.startedAtUnixNanos)
+        : isSet(object.started_at_unix_nanos)
+        ? globalThis.Number(object.started_at_unix_nanos)
+        : 0,
+      finishedAtUnixNanos: isSet(object.finishedAtUnixNanos)
+        ? globalThis.Number(object.finishedAtUnixNanos)
+        : isSet(object.finished_at_unix_nanos)
+        ? globalThis.Number(object.finished_at_unix_nanos)
+        : 0,
+      failure: isSet(object.failure) ? globalThis.String(object.failure) : "",
+    };
+  },
+
+  toJSON(message: TApiJobRunTimelineEntry): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.status !== 0) {
+      obj.status = tApiJobRunTimelineStatusToJSON(message.status);
+    }
+    if (message.attempt !== 0) {
+      obj.attempt = Math.round(message.attempt);
+    }
+    if (message.startedAtUnixNanos !== 0) {
+      obj.startedAtUnixNanos = Math.round(message.startedAtUnixNanos);
+    }
+    if (message.finishedAtUnixNanos !== 0) {
+      obj.finishedAtUnixNanos = Math.round(message.finishedAtUnixNanos);
+    }
+    if (message.failure !== "") {
+      obj.failure = message.failure;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiJobRunTimelineEntry>): TApiJobRunTimelineEntry {
+    return TApiJobRunTimelineEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiJobRunTimelineEntry>): TApiJobRunTimelineEntry {
+    const message = createBaseTApiJobRunTimelineEntry();
+    message.name = object.name ?? "";
+    message.status = object.status ?? 0;
+    message.attempt = object.attempt ?? 0;
+    message.startedAtUnixNanos = object.startedAtUnixNanos ?? 0;
+    message.finishedAtUnixNanos = object.finishedAtUnixNanos ?? 0;
+    message.failure = object.failure ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiJobResult(): TApiJobResult {
+  return {
+    exitCode: 0,
+    signaled: false,
+    signal: 0,
+    timedOut: false,
+    stdout: Buffer.alloc(0),
+    stderr: Buffer.alloc(0),
+    stdoutTruncated: false,
+    stderrTruncated: false,
+  };
+}
+
+export const TApiJobResult: MessageFns<TApiJobResult> = {
+  encode(message: TApiJobResult, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.exitCode !== 0) {
+      writer.uint32(8).int32(message.exitCode);
+    }
+    if (message.signaled !== false) {
+      writer.uint32(16).bool(message.signaled);
+    }
+    if (message.signal !== 0) {
+      writer.uint32(24).int32(message.signal);
+    }
+    if (message.timedOut !== false) {
+      writer.uint32(32).bool(message.timedOut);
+    }
+    if (message.stdout.length !== 0) {
+      writer.uint32(42).bytes(message.stdout);
+    }
+    if (message.stderr.length !== 0) {
+      writer.uint32(50).bytes(message.stderr);
+    }
+    if (message.stdoutTruncated !== false) {
+      writer.uint32(56).bool(message.stdoutTruncated);
+    }
+    if (message.stderrTruncated !== false) {
+      writer.uint32(64).bool(message.stderrTruncated);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiJobResult {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiJobResult();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.exitCode = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.signaled = reader.bool();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.signal = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.timedOut = reader.bool();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.stdout = Buffer.from(reader.bytes());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.stderr = Buffer.from(reader.bytes());
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.stdoutTruncated = reader.bool();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.stderrTruncated = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiJobResult {
+    return {
+      exitCode: isSet(object.exitCode)
+        ? globalThis.Number(object.exitCode)
+        : isSet(object.exit_code)
+        ? globalThis.Number(object.exit_code)
+        : 0,
+      signaled: isSet(object.signaled) ? globalThis.Boolean(object.signaled) : false,
+      signal: isSet(object.signal) ? globalThis.Number(object.signal) : 0,
+      timedOut: isSet(object.timedOut)
+        ? globalThis.Boolean(object.timedOut)
+        : isSet(object.timed_out)
+        ? globalThis.Boolean(object.timed_out)
+        : false,
+      stdout: isSet(object.stdout) ? Buffer.from(bytesFromBase64(object.stdout)) : Buffer.alloc(0),
+      stderr: isSet(object.stderr) ? Buffer.from(bytesFromBase64(object.stderr)) : Buffer.alloc(0),
+      stdoutTruncated: isSet(object.stdoutTruncated)
+        ? globalThis.Boolean(object.stdoutTruncated)
+        : isSet(object.stdout_truncated)
+        ? globalThis.Boolean(object.stdout_truncated)
+        : false,
+      stderrTruncated: isSet(object.stderrTruncated)
+        ? globalThis.Boolean(object.stderrTruncated)
+        : isSet(object.stderr_truncated)
+        ? globalThis.Boolean(object.stderr_truncated)
+        : false,
+    };
+  },
+
+  toJSON(message: TApiJobResult): unknown {
+    const obj: any = {};
+    if (message.exitCode !== 0) {
+      obj.exitCode = Math.round(message.exitCode);
+    }
+    if (message.signaled !== false) {
+      obj.signaled = message.signaled;
+    }
+    if (message.signal !== 0) {
+      obj.signal = Math.round(message.signal);
+    }
+    if (message.timedOut !== false) {
+      obj.timedOut = message.timedOut;
+    }
+    if (message.stdout.length !== 0) {
+      obj.stdout = base64FromBytes(message.stdout);
+    }
+    if (message.stderr.length !== 0) {
+      obj.stderr = base64FromBytes(message.stderr);
+    }
+    if (message.stdoutTruncated !== false) {
+      obj.stdoutTruncated = message.stdoutTruncated;
+    }
+    if (message.stderrTruncated !== false) {
+      obj.stderrTruncated = message.stderrTruncated;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiJobResult>): TApiJobResult {
+    return TApiJobResult.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiJobResult>): TApiJobResult {
+    const message = createBaseTApiJobResult();
+    message.exitCode = object.exitCode ?? 0;
+    message.signaled = object.signaled ?? false;
+    message.signal = object.signal ?? 0;
+    message.timedOut = object.timedOut ?? false;
+    message.stdout = object.stdout ?? Buffer.alloc(0);
+    message.stderr = object.stderr ?? Buffer.alloc(0);
+    message.stdoutTruncated = object.stdoutTruncated ?? false;
+    message.stderrTruncated = object.stderrTruncated ?? false;
+    return message;
+  },
+};
+
+function createBaseTApiScheduleSpec(): TApiScheduleSpec {
+  return {
+    cronExpressions: [],
+    intervalSeconds: 0,
+    runAtUnixNanos: 0,
+    timeZone: "",
+    jitterSeconds: 0,
+    overlap: 0,
+    paused: false,
+  };
+}
+
+export const TApiScheduleSpec: MessageFns<TApiScheduleSpec> = {
+  encode(message: TApiScheduleSpec, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.cronExpressions) {
+      writer.uint32(10).string(v!);
+    }
+    if (message.intervalSeconds !== 0) {
+      writer.uint32(16).int64(message.intervalSeconds);
+    }
+    if (message.runAtUnixNanos !== 0) {
+      writer.uint32(56).int64(message.runAtUnixNanos);
+    }
+    if (message.timeZone !== "") {
+      writer.uint32(26).string(message.timeZone);
+    }
+    if (message.jitterSeconds !== 0) {
+      writer.uint32(32).int64(message.jitterSeconds);
+    }
+    if (message.overlap !== 0) {
+      writer.uint32(40).int32(message.overlap);
+    }
+    if (message.paused !== false) {
+      writer.uint32(48).bool(message.paused);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiScheduleSpec {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiScheduleSpec();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.cronExpressions.push(reader.string());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.intervalSeconds = longToNumber(reader.int64());
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.runAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.timeZone = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.jitterSeconds = longToNumber(reader.int64());
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.overlap = reader.int32() as any;
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.paused = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiScheduleSpec {
+    return {
+      cronExpressions: globalThis.Array.isArray(object?.cronExpressions)
+        ? object.cronExpressions.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.cron_expressions)
+        ? object.cron_expressions.map((e: any) => globalThis.String(e))
+        : [],
+      intervalSeconds: isSet(object.intervalSeconds)
+        ? globalThis.Number(object.intervalSeconds)
+        : isSet(object.interval_seconds)
+        ? globalThis.Number(object.interval_seconds)
+        : 0,
+      runAtUnixNanos: isSet(object.runAtUnixNanos)
+        ? globalThis.Number(object.runAtUnixNanos)
+        : isSet(object.run_at_unix_nanos)
+        ? globalThis.Number(object.run_at_unix_nanos)
+        : 0,
+      timeZone: isSet(object.timeZone)
+        ? globalThis.String(object.timeZone)
+        : isSet(object.time_zone)
+        ? globalThis.String(object.time_zone)
+        : "",
+      jitterSeconds: isSet(object.jitterSeconds)
+        ? globalThis.Number(object.jitterSeconds)
+        : isSet(object.jitter_seconds)
+        ? globalThis.Number(object.jitter_seconds)
+        : 0,
+      overlap: isSet(object.overlap) ? tApiScheduleOverlapFromJSON(object.overlap) : 0,
+      paused: isSet(object.paused) ? globalThis.Boolean(object.paused) : false,
+    };
+  },
+
+  toJSON(message: TApiScheduleSpec): unknown {
+    const obj: any = {};
+    if (message.cronExpressions?.length) {
+      obj.cronExpressions = message.cronExpressions;
+    }
+    if (message.intervalSeconds !== 0) {
+      obj.intervalSeconds = Math.round(message.intervalSeconds);
+    }
+    if (message.runAtUnixNanos !== 0) {
+      obj.runAtUnixNanos = Math.round(message.runAtUnixNanos);
+    }
+    if (message.timeZone !== "") {
+      obj.timeZone = message.timeZone;
+    }
+    if (message.jitterSeconds !== 0) {
+      obj.jitterSeconds = Math.round(message.jitterSeconds);
+    }
+    if (message.overlap !== 0) {
+      obj.overlap = tApiScheduleOverlapToJSON(message.overlap);
+    }
+    if (message.paused !== false) {
+      obj.paused = message.paused;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiScheduleSpec>): TApiScheduleSpec {
+    return TApiScheduleSpec.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiScheduleSpec>): TApiScheduleSpec {
+    const message = createBaseTApiScheduleSpec();
+    message.cronExpressions = object.cronExpressions?.map((e) => e) || [];
+    message.intervalSeconds = object.intervalSeconds ?? 0;
+    message.runAtUnixNanos = object.runAtUnixNanos ?? 0;
+    message.timeZone = object.timeZone ?? "";
+    message.jitterSeconds = object.jitterSeconds ?? 0;
+    message.overlap = object.overlap ?? 0;
+    message.paused = object.paused ?? false;
+    return message;
+  },
+};
+
+function createBaseTApiCreateJobScheduleRequest(): TApiCreateJobScheduleRequest {
+  return { apiKey: "", idempotencyKey: "", schedule: undefined, spec: undefined };
+}
+
+export const TApiCreateJobScheduleRequest: MessageFns<TApiCreateJobScheduleRequest> = {
+  encode(message: TApiCreateJobScheduleRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.idempotencyKey !== "") {
+      writer.uint32(18).string(message.idempotencyKey);
+    }
+    if (message.schedule !== undefined) {
+      TApiScheduleSpec.encode(message.schedule, writer.uint32(26).fork()).join();
+    }
+    if (message.spec !== undefined) {
+      TApiJobSpec.encode(message.spec, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiCreateJobScheduleRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiCreateJobScheduleRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.idempotencyKey = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.schedule = TApiScheduleSpec.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.spec = TApiJobSpec.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiCreateJobScheduleRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      idempotencyKey: isSet(object.idempotencyKey)
+        ? globalThis.String(object.idempotencyKey)
+        : isSet(object.idempotency_key)
+        ? globalThis.String(object.idempotency_key)
+        : "",
+      schedule: isSet(object.schedule) ? TApiScheduleSpec.fromJSON(object.schedule) : undefined,
+      spec: isSet(object.spec) ? TApiJobSpec.fromJSON(object.spec) : undefined,
+    };
+  },
+
+  toJSON(message: TApiCreateJobScheduleRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.idempotencyKey !== "") {
+      obj.idempotencyKey = message.idempotencyKey;
+    }
+    if (message.schedule !== undefined) {
+      obj.schedule = TApiScheduleSpec.toJSON(message.schedule);
+    }
+    if (message.spec !== undefined) {
+      obj.spec = TApiJobSpec.toJSON(message.spec);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiCreateJobScheduleRequest>): TApiCreateJobScheduleRequest {
+    return TApiCreateJobScheduleRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiCreateJobScheduleRequest>): TApiCreateJobScheduleRequest {
+    const message = createBaseTApiCreateJobScheduleRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.idempotencyKey = object.idempotencyKey ?? "";
+    message.schedule = (object.schedule !== undefined && object.schedule !== null)
+      ? TApiScheduleSpec.fromPartial(object.schedule)
+      : undefined;
+    message.spec = (object.spec !== undefined && object.spec !== null)
+      ? TApiJobSpec.fromPartial(object.spec)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiCreateJobScheduleResponse(): TApiCreateJobScheduleResponse {
+  return { schedule: undefined };
+}
+
+export const TApiCreateJobScheduleResponse: MessageFns<TApiCreateJobScheduleResponse> = {
+  encode(message: TApiCreateJobScheduleResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.schedule !== undefined) {
+      TApiJobSchedule.encode(message.schedule, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiCreateJobScheduleResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiCreateJobScheduleResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.schedule = TApiJobSchedule.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiCreateJobScheduleResponse {
+    return { schedule: isSet(object.schedule) ? TApiJobSchedule.fromJSON(object.schedule) : undefined };
+  },
+
+  toJSON(message: TApiCreateJobScheduleResponse): unknown {
+    const obj: any = {};
+    if (message.schedule !== undefined) {
+      obj.schedule = TApiJobSchedule.toJSON(message.schedule);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiCreateJobScheduleResponse>): TApiCreateJobScheduleResponse {
+    return TApiCreateJobScheduleResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiCreateJobScheduleResponse>): TApiCreateJobScheduleResponse {
+    const message = createBaseTApiCreateJobScheduleResponse();
+    message.schedule = (object.schedule !== undefined && object.schedule !== null)
+      ? TApiJobSchedule.fromPartial(object.schedule)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiGetJobScheduleRequest(): TApiGetJobScheduleRequest {
+  return { apiKey: "", scheduleId: "" };
+}
+
+export const TApiGetJobScheduleRequest: MessageFns<TApiGetJobScheduleRequest> = {
+  encode(message: TApiGetJobScheduleRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.scheduleId !== "") {
+      writer.uint32(18).string(message.scheduleId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetJobScheduleRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetJobScheduleRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.scheduleId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetJobScheduleRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      scheduleId: isSet(object.scheduleId)
+        ? globalThis.String(object.scheduleId)
+        : isSet(object.schedule_id)
+        ? globalThis.String(object.schedule_id)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiGetJobScheduleRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.scheduleId !== "") {
+      obj.scheduleId = message.scheduleId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetJobScheduleRequest>): TApiGetJobScheduleRequest {
+    return TApiGetJobScheduleRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiGetJobScheduleRequest>): TApiGetJobScheduleRequest {
+    const message = createBaseTApiGetJobScheduleRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.scheduleId = object.scheduleId ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiGetJobScheduleResponse(): TApiGetJobScheduleResponse {
+  return { schedule: undefined };
+}
+
+export const TApiGetJobScheduleResponse: MessageFns<TApiGetJobScheduleResponse> = {
+  encode(message: TApiGetJobScheduleResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.schedule !== undefined) {
+      TApiJobSchedule.encode(message.schedule, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiGetJobScheduleResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiGetJobScheduleResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.schedule = TApiJobSchedule.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiGetJobScheduleResponse {
+    return { schedule: isSet(object.schedule) ? TApiJobSchedule.fromJSON(object.schedule) : undefined };
+  },
+
+  toJSON(message: TApiGetJobScheduleResponse): unknown {
+    const obj: any = {};
+    if (message.schedule !== undefined) {
+      obj.schedule = TApiJobSchedule.toJSON(message.schedule);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiGetJobScheduleResponse>): TApiGetJobScheduleResponse {
+    return TApiGetJobScheduleResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiGetJobScheduleResponse>): TApiGetJobScheduleResponse {
+    const message = createBaseTApiGetJobScheduleResponse();
+    message.schedule = (object.schedule !== undefined && object.schedule !== null)
+      ? TApiJobSchedule.fromPartial(object.schedule)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiListJobSchedulesRequest(): TApiListJobSchedulesRequest {
+  return { apiKey: "", pageSize: 0, pageToken: "" };
+}
+
+export const TApiListJobSchedulesRequest: MessageFns<TApiListJobSchedulesRequest> = {
+  encode(message: TApiListJobSchedulesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(16).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(26).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListJobSchedulesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListJobSchedulesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListJobSchedulesRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      pageSize: isSet(object.pageSize)
+        ? globalThis.Number(object.pageSize)
+        : isSet(object.page_size)
+        ? globalThis.Number(object.page_size)
+        : 0,
+      pageToken: isSet(object.pageToken)
+        ? globalThis.String(object.pageToken)
+        : isSet(object.page_token)
+        ? globalThis.String(object.page_token)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiListJobSchedulesRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListJobSchedulesRequest>): TApiListJobSchedulesRequest {
+    return TApiListJobSchedulesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListJobSchedulesRequest>): TApiListJobSchedulesRequest {
+    const message = createBaseTApiListJobSchedulesRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiListJobSchedulesResponse(): TApiListJobSchedulesResponse {
+  return { schedules: [], nextPageToken: "" };
+}
+
+export const TApiListJobSchedulesResponse: MessageFns<TApiListJobSchedulesResponse> = {
+  encode(message: TApiListJobSchedulesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.schedules) {
+      TApiJobSchedule.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiListJobSchedulesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiListJobSchedulesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.schedules.push(TApiJobSchedule.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiListJobSchedulesResponse {
+    return {
+      schedules: globalThis.Array.isArray(object?.schedules)
+        ? object.schedules.map((e: any) => TApiJobSchedule.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken)
+        ? globalThis.String(object.nextPageToken)
+        : isSet(object.next_page_token)
+        ? globalThis.String(object.next_page_token)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiListJobSchedulesResponse): unknown {
+    const obj: any = {};
+    if (message.schedules?.length) {
+      obj.schedules = message.schedules.map((e) => TApiJobSchedule.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiListJobSchedulesResponse>): TApiListJobSchedulesResponse {
+    return TApiListJobSchedulesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiListJobSchedulesResponse>): TApiListJobSchedulesResponse {
+    const message = createBaseTApiListJobSchedulesResponse();
+    message.schedules = object.schedules?.map((e) => TApiJobSchedule.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiUpdateJobScheduleRequest(): TApiUpdateJobScheduleRequest {
+  return { apiKey: "", scheduleId: "", schedule: undefined, spec: undefined };
+}
+
+export const TApiUpdateJobScheduleRequest: MessageFns<TApiUpdateJobScheduleRequest> = {
+  encode(message: TApiUpdateJobScheduleRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.scheduleId !== "") {
+      writer.uint32(18).string(message.scheduleId);
+    }
+    if (message.schedule !== undefined) {
+      TApiScheduleSpec.encode(message.schedule, writer.uint32(26).fork()).join();
+    }
+    if (message.spec !== undefined) {
+      TApiJobSpec.encode(message.spec, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiUpdateJobScheduleRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiUpdateJobScheduleRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.scheduleId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.schedule = TApiScheduleSpec.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.spec = TApiJobSpec.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiUpdateJobScheduleRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      scheduleId: isSet(object.scheduleId)
+        ? globalThis.String(object.scheduleId)
+        : isSet(object.schedule_id)
+        ? globalThis.String(object.schedule_id)
+        : "",
+      schedule: isSet(object.schedule) ? TApiScheduleSpec.fromJSON(object.schedule) : undefined,
+      spec: isSet(object.spec) ? TApiJobSpec.fromJSON(object.spec) : undefined,
+    };
+  },
+
+  toJSON(message: TApiUpdateJobScheduleRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.scheduleId !== "") {
+      obj.scheduleId = message.scheduleId;
+    }
+    if (message.schedule !== undefined) {
+      obj.schedule = TApiScheduleSpec.toJSON(message.schedule);
+    }
+    if (message.spec !== undefined) {
+      obj.spec = TApiJobSpec.toJSON(message.spec);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiUpdateJobScheduleRequest>): TApiUpdateJobScheduleRequest {
+    return TApiUpdateJobScheduleRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiUpdateJobScheduleRequest>): TApiUpdateJobScheduleRequest {
+    const message = createBaseTApiUpdateJobScheduleRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.scheduleId = object.scheduleId ?? "";
+    message.schedule = (object.schedule !== undefined && object.schedule !== null)
+      ? TApiScheduleSpec.fromPartial(object.schedule)
+      : undefined;
+    message.spec = (object.spec !== undefined && object.spec !== null)
+      ? TApiJobSpec.fromPartial(object.spec)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiUpdateJobScheduleResponse(): TApiUpdateJobScheduleResponse {
+  return { schedule: undefined };
+}
+
+export const TApiUpdateJobScheduleResponse: MessageFns<TApiUpdateJobScheduleResponse> = {
+  encode(message: TApiUpdateJobScheduleResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.schedule !== undefined) {
+      TApiJobSchedule.encode(message.schedule, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiUpdateJobScheduleResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiUpdateJobScheduleResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.schedule = TApiJobSchedule.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiUpdateJobScheduleResponse {
+    return { schedule: isSet(object.schedule) ? TApiJobSchedule.fromJSON(object.schedule) : undefined };
+  },
+
+  toJSON(message: TApiUpdateJobScheduleResponse): unknown {
+    const obj: any = {};
+    if (message.schedule !== undefined) {
+      obj.schedule = TApiJobSchedule.toJSON(message.schedule);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiUpdateJobScheduleResponse>): TApiUpdateJobScheduleResponse {
+    return TApiUpdateJobScheduleResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiUpdateJobScheduleResponse>): TApiUpdateJobScheduleResponse {
+    const message = createBaseTApiUpdateJobScheduleResponse();
+    message.schedule = (object.schedule !== undefined && object.schedule !== null)
+      ? TApiJobSchedule.fromPartial(object.schedule)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiSetJobSchedulePausedRequest(): TApiSetJobSchedulePausedRequest {
+  return { apiKey: "", scheduleId: "", paused: false, note: "" };
+}
+
+export const TApiSetJobSchedulePausedRequest: MessageFns<TApiSetJobSchedulePausedRequest> = {
+  encode(message: TApiSetJobSchedulePausedRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.scheduleId !== "") {
+      writer.uint32(18).string(message.scheduleId);
+    }
+    if (message.paused !== false) {
+      writer.uint32(24).bool(message.paused);
+    }
+    if (message.note !== "") {
+      writer.uint32(34).string(message.note);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiSetJobSchedulePausedRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiSetJobSchedulePausedRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.scheduleId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.paused = reader.bool();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.note = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiSetJobSchedulePausedRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      scheduleId: isSet(object.scheduleId)
+        ? globalThis.String(object.scheduleId)
+        : isSet(object.schedule_id)
+        ? globalThis.String(object.schedule_id)
+        : "",
+      paused: isSet(object.paused) ? globalThis.Boolean(object.paused) : false,
+      note: isSet(object.note) ? globalThis.String(object.note) : "",
+    };
+  },
+
+  toJSON(message: TApiSetJobSchedulePausedRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.scheduleId !== "") {
+      obj.scheduleId = message.scheduleId;
+    }
+    if (message.paused !== false) {
+      obj.paused = message.paused;
+    }
+    if (message.note !== "") {
+      obj.note = message.note;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiSetJobSchedulePausedRequest>): TApiSetJobSchedulePausedRequest {
+    return TApiSetJobSchedulePausedRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiSetJobSchedulePausedRequest>): TApiSetJobSchedulePausedRequest {
+    const message = createBaseTApiSetJobSchedulePausedRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.scheduleId = object.scheduleId ?? "";
+    message.paused = object.paused ?? false;
+    message.note = object.note ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiSetJobSchedulePausedResponse(): TApiSetJobSchedulePausedResponse {
+  return { schedule: undefined };
+}
+
+export const TApiSetJobSchedulePausedResponse: MessageFns<TApiSetJobSchedulePausedResponse> = {
+  encode(message: TApiSetJobSchedulePausedResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.schedule !== undefined) {
+      TApiJobSchedule.encode(message.schedule, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiSetJobSchedulePausedResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiSetJobSchedulePausedResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.schedule = TApiJobSchedule.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiSetJobSchedulePausedResponse {
+    return { schedule: isSet(object.schedule) ? TApiJobSchedule.fromJSON(object.schedule) : undefined };
+  },
+
+  toJSON(message: TApiSetJobSchedulePausedResponse): unknown {
+    const obj: any = {};
+    if (message.schedule !== undefined) {
+      obj.schedule = TApiJobSchedule.toJSON(message.schedule);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiSetJobSchedulePausedResponse>): TApiSetJobSchedulePausedResponse {
+    return TApiSetJobSchedulePausedResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiSetJobSchedulePausedResponse>): TApiSetJobSchedulePausedResponse {
+    const message = createBaseTApiSetJobSchedulePausedResponse();
+    message.schedule = (object.schedule !== undefined && object.schedule !== null)
+      ? TApiJobSchedule.fromPartial(object.schedule)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTApiTriggerJobScheduleRequest(): TApiTriggerJobScheduleRequest {
+  return { apiKey: "", scheduleId: "" };
+}
+
+export const TApiTriggerJobScheduleRequest: MessageFns<TApiTriggerJobScheduleRequest> = {
+  encode(message: TApiTriggerJobScheduleRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.scheduleId !== "") {
+      writer.uint32(18).string(message.scheduleId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiTriggerJobScheduleRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiTriggerJobScheduleRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.scheduleId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiTriggerJobScheduleRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      scheduleId: isSet(object.scheduleId)
+        ? globalThis.String(object.scheduleId)
+        : isSet(object.schedule_id)
+        ? globalThis.String(object.schedule_id)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiTriggerJobScheduleRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.scheduleId !== "") {
+      obj.scheduleId = message.scheduleId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiTriggerJobScheduleRequest>): TApiTriggerJobScheduleRequest {
+    return TApiTriggerJobScheduleRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiTriggerJobScheduleRequest>): TApiTriggerJobScheduleRequest {
+    const message = createBaseTApiTriggerJobScheduleRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.scheduleId = object.scheduleId ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiTriggerJobScheduleResponse(): TApiTriggerJobScheduleResponse {
+  return {};
+}
+
+export const TApiTriggerJobScheduleResponse: MessageFns<TApiTriggerJobScheduleResponse> = {
+  encode(_: TApiTriggerJobScheduleResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiTriggerJobScheduleResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiTriggerJobScheduleResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): TApiTriggerJobScheduleResponse {
+    return {};
+  },
+
+  toJSON(_: TApiTriggerJobScheduleResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiTriggerJobScheduleResponse>): TApiTriggerJobScheduleResponse {
+    return TApiTriggerJobScheduleResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<TApiTriggerJobScheduleResponse>): TApiTriggerJobScheduleResponse {
+    const message = createBaseTApiTriggerJobScheduleResponse();
+    return message;
+  },
+};
+
+function createBaseTApiDeleteJobScheduleRequest(): TApiDeleteJobScheduleRequest {
+  return { apiKey: "", scheduleId: "" };
+}
+
+export const TApiDeleteJobScheduleRequest: MessageFns<TApiDeleteJobScheduleRequest> = {
+  encode(message: TApiDeleteJobScheduleRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.apiKey !== "") {
+      writer.uint32(10).string(message.apiKey);
+    }
+    if (message.scheduleId !== "") {
+      writer.uint32(18).string(message.scheduleId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiDeleteJobScheduleRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiDeleteJobScheduleRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.apiKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.scheduleId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiDeleteJobScheduleRequest {
+    return {
+      apiKey: isSet(object.apiKey)
+        ? globalThis.String(object.apiKey)
+        : isSet(object.api_key)
+        ? globalThis.String(object.api_key)
+        : "",
+      scheduleId: isSet(object.scheduleId)
+        ? globalThis.String(object.scheduleId)
+        : isSet(object.schedule_id)
+        ? globalThis.String(object.schedule_id)
+        : "",
+    };
+  },
+
+  toJSON(message: TApiDeleteJobScheduleRequest): unknown {
+    const obj: any = {};
+    if (message.apiKey !== "") {
+      obj.apiKey = message.apiKey;
+    }
+    if (message.scheduleId !== "") {
+      obj.scheduleId = message.scheduleId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiDeleteJobScheduleRequest>): TApiDeleteJobScheduleRequest {
+    return TApiDeleteJobScheduleRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiDeleteJobScheduleRequest>): TApiDeleteJobScheduleRequest {
+    const message = createBaseTApiDeleteJobScheduleRequest();
+    message.apiKey = object.apiKey ?? "";
+    message.scheduleId = object.scheduleId ?? "";
+    return message;
+  },
+};
+
+function createBaseTApiDeleteJobScheduleResponse(): TApiDeleteJobScheduleResponse {
+  return {};
+}
+
+export const TApiDeleteJobScheduleResponse: MessageFns<TApiDeleteJobScheduleResponse> = {
+  encode(_: TApiDeleteJobScheduleResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiDeleteJobScheduleResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiDeleteJobScheduleResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): TApiDeleteJobScheduleResponse {
+    return {};
+  },
+
+  toJSON(_: TApiDeleteJobScheduleResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiDeleteJobScheduleResponse>): TApiDeleteJobScheduleResponse {
+    return TApiDeleteJobScheduleResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<TApiDeleteJobScheduleResponse>): TApiDeleteJobScheduleResponse {
+    const message = createBaseTApiDeleteJobScheduleResponse();
+    return message;
+  },
+};
+
+function createBaseTApiJobSchedule(): TApiJobSchedule {
+  return {
+    scheduleId: "",
+    schedule: undefined,
+    spec: undefined,
+    paused: false,
+    note: "",
+    nextRunAtUnixNanos: 0,
+    oneShot: false,
+    remainingActions: 0,
+    availableActions: [],
+    createdAtUnixNanos: 0,
+    updatedAtUnixNanos: 0,
+    numActions: 0,
+    numActionsSkippedOverlap: 0,
+    numActionsMissedCatchupWindow: 0,
+    recentRunIds: [],
+    runningRunIds: [],
+  };
+}
+
+export const TApiJobSchedule: MessageFns<TApiJobSchedule> = {
+  encode(message: TApiJobSchedule, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.scheduleId !== "") {
+      writer.uint32(10).string(message.scheduleId);
+    }
+    if (message.schedule !== undefined) {
+      TApiScheduleSpec.encode(message.schedule, writer.uint32(18).fork()).join();
+    }
+    if (message.spec !== undefined) {
+      TApiJobSpec.encode(message.spec, writer.uint32(26).fork()).join();
+    }
+    if (message.paused !== false) {
+      writer.uint32(32).bool(message.paused);
+    }
+    if (message.note !== "") {
+      writer.uint32(42).string(message.note);
+    }
+    if (message.nextRunAtUnixNanos !== 0) {
+      writer.uint32(48).int64(message.nextRunAtUnixNanos);
+    }
+    if (message.oneShot !== false) {
+      writer.uint32(56).bool(message.oneShot);
+    }
+    if (message.remainingActions !== 0) {
+      writer.uint32(64).int32(message.remainingActions);
+    }
+    writer.uint32(74).fork();
+    for (const v of message.availableActions) {
+      writer.int32(v);
+    }
+    writer.join();
+    if (message.createdAtUnixNanos !== 0) {
+      writer.uint32(80).int64(message.createdAtUnixNanos);
+    }
+    if (message.updatedAtUnixNanos !== 0) {
+      writer.uint32(88).int64(message.updatedAtUnixNanos);
+    }
+    if (message.numActions !== 0) {
+      writer.uint32(96).int32(message.numActions);
+    }
+    if (message.numActionsSkippedOverlap !== 0) {
+      writer.uint32(104).int32(message.numActionsSkippedOverlap);
+    }
+    if (message.numActionsMissedCatchupWindow !== 0) {
+      writer.uint32(112).int32(message.numActionsMissedCatchupWindow);
+    }
+    for (const v of message.recentRunIds) {
+      writer.uint32(122).string(v!);
+    }
+    for (const v of message.runningRunIds) {
+      writer.uint32(130).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TApiJobSchedule {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTApiJobSchedule();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.scheduleId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.schedule = TApiScheduleSpec.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.spec = TApiJobSpec.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.paused = reader.bool();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.note = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.nextRunAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.oneShot = reader.bool();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.remainingActions = reader.int32();
+          continue;
+        }
+        case 9: {
+          if (tag === 72) {
+            message.availableActions.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 74) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.availableActions.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.createdAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.updatedAtUnixNanos = longToNumber(reader.int64());
+          continue;
+        }
+        case 12: {
+          if (tag !== 96) {
+            break;
+          }
+
+          message.numActions = reader.int32();
+          continue;
+        }
+        case 13: {
+          if (tag !== 104) {
+            break;
+          }
+
+          message.numActionsSkippedOverlap = reader.int32();
+          continue;
+        }
+        case 14: {
+          if (tag !== 112) {
+            break;
+          }
+
+          message.numActionsMissedCatchupWindow = reader.int32();
+          continue;
+        }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.recentRunIds.push(reader.string());
+          continue;
+        }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.runningRunIds.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TApiJobSchedule {
+    return {
+      scheduleId: isSet(object.scheduleId)
+        ? globalThis.String(object.scheduleId)
+        : isSet(object.schedule_id)
+        ? globalThis.String(object.schedule_id)
+        : "",
+      schedule: isSet(object.schedule) ? TApiScheduleSpec.fromJSON(object.schedule) : undefined,
+      spec: isSet(object.spec) ? TApiJobSpec.fromJSON(object.spec) : undefined,
+      paused: isSet(object.paused) ? globalThis.Boolean(object.paused) : false,
+      note: isSet(object.note) ? globalThis.String(object.note) : "",
+      nextRunAtUnixNanos: isSet(object.nextRunAtUnixNanos)
+        ? globalThis.Number(object.nextRunAtUnixNanos)
+        : isSet(object.next_run_at_unix_nanos)
+        ? globalThis.Number(object.next_run_at_unix_nanos)
+        : 0,
+      oneShot: isSet(object.oneShot)
+        ? globalThis.Boolean(object.oneShot)
+        : isSet(object.one_shot)
+        ? globalThis.Boolean(object.one_shot)
+        : false,
+      remainingActions: isSet(object.remainingActions)
+        ? globalThis.Number(object.remainingActions)
+        : isSet(object.remaining_actions)
+        ? globalThis.Number(object.remaining_actions)
+        : 0,
+      availableActions: globalThis.Array.isArray(object?.availableActions)
+        ? object.availableActions.map((e: any) => tApiScheduleActionFromJSON(e))
+        : globalThis.Array.isArray(object?.available_actions)
+        ? object.available_actions.map((e: any) => tApiScheduleActionFromJSON(e))
+        : [],
+      createdAtUnixNanos: isSet(object.createdAtUnixNanos)
+        ? globalThis.Number(object.createdAtUnixNanos)
+        : isSet(object.created_at_unix_nanos)
+        ? globalThis.Number(object.created_at_unix_nanos)
+        : 0,
+      updatedAtUnixNanos: isSet(object.updatedAtUnixNanos)
+        ? globalThis.Number(object.updatedAtUnixNanos)
+        : isSet(object.updated_at_unix_nanos)
+        ? globalThis.Number(object.updated_at_unix_nanos)
+        : 0,
+      numActions: isSet(object.numActions)
+        ? globalThis.Number(object.numActions)
+        : isSet(object.num_actions)
+        ? globalThis.Number(object.num_actions)
+        : 0,
+      numActionsSkippedOverlap: isSet(object.numActionsSkippedOverlap)
+        ? globalThis.Number(object.numActionsSkippedOverlap)
+        : isSet(object.num_actions_skipped_overlap)
+        ? globalThis.Number(object.num_actions_skipped_overlap)
+        : 0,
+      numActionsMissedCatchupWindow: isSet(object.numActionsMissedCatchupWindow)
+        ? globalThis.Number(object.numActionsMissedCatchupWindow)
+        : isSet(object.num_actions_missed_catchup_window)
+        ? globalThis.Number(object.num_actions_missed_catchup_window)
+        : 0,
+      recentRunIds: globalThis.Array.isArray(object?.recentRunIds)
+        ? object.recentRunIds.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.recent_run_ids)
+        ? object.recent_run_ids.map((e: any) => globalThis.String(e))
+        : [],
+      runningRunIds: globalThis.Array.isArray(object?.runningRunIds)
+        ? object.runningRunIds.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.running_run_ids)
+        ? object.running_run_ids.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TApiJobSchedule): unknown {
+    const obj: any = {};
+    if (message.scheduleId !== "") {
+      obj.scheduleId = message.scheduleId;
+    }
+    if (message.schedule !== undefined) {
+      obj.schedule = TApiScheduleSpec.toJSON(message.schedule);
+    }
+    if (message.spec !== undefined) {
+      obj.spec = TApiJobSpec.toJSON(message.spec);
+    }
+    if (message.paused !== false) {
+      obj.paused = message.paused;
+    }
+    if (message.note !== "") {
+      obj.note = message.note;
+    }
+    if (message.nextRunAtUnixNanos !== 0) {
+      obj.nextRunAtUnixNanos = Math.round(message.nextRunAtUnixNanos);
+    }
+    if (message.oneShot !== false) {
+      obj.oneShot = message.oneShot;
+    }
+    if (message.remainingActions !== 0) {
+      obj.remainingActions = Math.round(message.remainingActions);
+    }
+    if (message.availableActions?.length) {
+      obj.availableActions = message.availableActions.map((e) => tApiScheduleActionToJSON(e));
+    }
+    if (message.createdAtUnixNanos !== 0) {
+      obj.createdAtUnixNanos = Math.round(message.createdAtUnixNanos);
+    }
+    if (message.updatedAtUnixNanos !== 0) {
+      obj.updatedAtUnixNanos = Math.round(message.updatedAtUnixNanos);
+    }
+    if (message.numActions !== 0) {
+      obj.numActions = Math.round(message.numActions);
+    }
+    if (message.numActionsSkippedOverlap !== 0) {
+      obj.numActionsSkippedOverlap = Math.round(message.numActionsSkippedOverlap);
+    }
+    if (message.numActionsMissedCatchupWindow !== 0) {
+      obj.numActionsMissedCatchupWindow = Math.round(message.numActionsMissedCatchupWindow);
+    }
+    if (message.recentRunIds?.length) {
+      obj.recentRunIds = message.recentRunIds;
+    }
+    if (message.runningRunIds?.length) {
+      obj.runningRunIds = message.runningRunIds;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TApiJobSchedule>): TApiJobSchedule {
+    return TApiJobSchedule.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TApiJobSchedule>): TApiJobSchedule {
+    const message = createBaseTApiJobSchedule();
+    message.scheduleId = object.scheduleId ?? "";
+    message.schedule = (object.schedule !== undefined && object.schedule !== null)
+      ? TApiScheduleSpec.fromPartial(object.schedule)
+      : undefined;
+    message.spec = (object.spec !== undefined && object.spec !== null)
+      ? TApiJobSpec.fromPartial(object.spec)
+      : undefined;
+    message.paused = object.paused ?? false;
+    message.note = object.note ?? "";
+    message.nextRunAtUnixNanos = object.nextRunAtUnixNanos ?? 0;
+    message.oneShot = object.oneShot ?? false;
+    message.remainingActions = object.remainingActions ?? 0;
+    message.availableActions = object.availableActions?.map((e) => e) || [];
+    message.createdAtUnixNanos = object.createdAtUnixNanos ?? 0;
+    message.updatedAtUnixNanos = object.updatedAtUnixNanos ?? 0;
+    message.numActions = object.numActions ?? 0;
+    message.numActionsSkippedOverlap = object.numActionsSkippedOverlap ?? 0;
+    message.numActionsMissedCatchupWindow = object.numActionsMissedCatchupWindow ?? 0;
+    message.recentRunIds = object.recentRunIds?.map((e) => e) || [];
+    message.runningRunIds = object.runningRunIds?.map((e) => e) || [];
     return message;
   },
 };
@@ -4020,6 +13541,336 @@ export const TApiServiceService = {
       Buffer.from(TApiListOrganizationsResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): TApiListOrganizationsResponse => TApiListOrganizationsResponse.decode(value),
   },
+  /**
+   * Billing reads and top-up. Owner-only, unlike every other method here: a
+   * member can spend an organization's credit but cannot see its balance or
+   * add to it.
+   *
+   * These are the only public methods that reach the billing module, and they
+   * reach it the same way everything else does -- TApi authenticates and
+   * authorizes, then calls it over a private transport that is not routed from
+   * outside. Nothing in the billing schema is published.
+   */
+  getOrganizationBilling: {
+    path: "/tyto.runtime.v1.TApiService/GetOrganizationBilling" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiGetOrganizationBillingRequest): Buffer =>
+      Buffer.from(TApiGetOrganizationBillingRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiGetOrganizationBillingRequest =>
+      TApiGetOrganizationBillingRequest.decode(value),
+    responseSerialize: (value: TApiGetOrganizationBillingResponse): Buffer =>
+      Buffer.from(TApiGetOrganizationBillingResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiGetOrganizationBillingResponse =>
+      TApiGetOrganizationBillingResponse.decode(value),
+  },
+  listOrganizationTopUpOffers: {
+    path: "/tyto.runtime.v1.TApiService/ListOrganizationTopUpOffers" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiListOrganizationTopUpOffersRequest): Buffer =>
+      Buffer.from(TApiListOrganizationTopUpOffersRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiListOrganizationTopUpOffersRequest =>
+      TApiListOrganizationTopUpOffersRequest.decode(value),
+    responseSerialize: (value: TApiListOrganizationTopUpOffersResponse): Buffer =>
+      Buffer.from(TApiListOrganizationTopUpOffersResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiListOrganizationTopUpOffersResponse =>
+      TApiListOrganizationTopUpOffersResponse.decode(value),
+  },
+  startOrganizationTopUpPurchase: {
+    path: "/tyto.runtime.v1.TApiService/StartOrganizationTopUpPurchase" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiStartOrganizationTopUpPurchaseRequest): Buffer =>
+      Buffer.from(TApiStartOrganizationTopUpPurchaseRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiStartOrganizationTopUpPurchaseRequest =>
+      TApiStartOrganizationTopUpPurchaseRequest.decode(value),
+    responseSerialize: (value: TApiStartOrganizationTopUpPurchaseResponse): Buffer =>
+      Buffer.from(TApiStartOrganizationTopUpPurchaseResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiStartOrganizationTopUpPurchaseResponse =>
+      TApiStartOrganizationTopUpPurchaseResponse.decode(value),
+  },
+  applyOrganizationCoupon: {
+    path: "/tyto.runtime.v1.TApiService/ApplyOrganizationCoupon" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiApplyOrganizationCouponRequest): Buffer =>
+      Buffer.from(TApiApplyOrganizationCouponRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiApplyOrganizationCouponRequest =>
+      TApiApplyOrganizationCouponRequest.decode(value),
+    responseSerialize: (value: TApiApplyOrganizationCouponResponse): Buffer =>
+      Buffer.from(TApiApplyOrganizationCouponResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiApplyOrganizationCouponResponse =>
+      TApiApplyOrganizationCouponResponse.decode(value),
+  },
+  listOrganizationCoupons: {
+    path: "/tyto.runtime.v1.TApiService/ListOrganizationCoupons" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiListOrganizationCouponsRequest): Buffer =>
+      Buffer.from(TApiListOrganizationCouponsRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiListOrganizationCouponsRequest =>
+      TApiListOrganizationCouponsRequest.decode(value),
+    responseSerialize: (value: TApiListOrganizationCouponsResponse): Buffer =>
+      Buffer.from(TApiListOrganizationCouponsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiListOrganizationCouponsResponse =>
+      TApiListOrganizationCouponsResponse.decode(value),
+  },
+  listOrganizationInvoices: {
+    path: "/tyto.runtime.v1.TApiService/ListOrganizationInvoices" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiListOrganizationInvoicesRequest): Buffer =>
+      Buffer.from(TApiListOrganizationInvoicesRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiListOrganizationInvoicesRequest =>
+      TApiListOrganizationInvoicesRequest.decode(value),
+    responseSerialize: (value: TApiListOrganizationInvoicesResponse): Buffer =>
+      Buffer.from(TApiListOrganizationInvoicesResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiListOrganizationInvoicesResponse =>
+      TApiListOrganizationInvoicesResponse.decode(value),
+  },
+  getOrganizationInvoice: {
+    path: "/tyto.runtime.v1.TApiService/GetOrganizationInvoice" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiGetOrganizationInvoiceRequest): Buffer =>
+      Buffer.from(TApiGetOrganizationInvoiceRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiGetOrganizationInvoiceRequest =>
+      TApiGetOrganizationInvoiceRequest.decode(value),
+    responseSerialize: (value: TApiGetOrganizationInvoiceResponse): Buffer =>
+      Buffer.from(TApiGetOrganizationInvoiceResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiGetOrganizationInvoiceResponse =>
+      TApiGetOrganizationInvoiceResponse.decode(value),
+  },
+  /**
+   * GetOrganizationBillingOverview, ListOrganizationUsageBreakdown,
+   * ListOrganizationUsageSeries, and ListOrganizationPayments are the
+   * dashboard reads added in docs/billing-dashboard-api.md (Phase 8). All
+   * four require the owner or billing role, exactly like the billing RPCs
+   * above.
+   */
+  getOrganizationBillingOverview: {
+    path: "/tyto.runtime.v1.TApiService/GetOrganizationBillingOverview" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiGetOrganizationBillingOverviewRequest): Buffer =>
+      Buffer.from(TApiGetOrganizationBillingOverviewRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiGetOrganizationBillingOverviewRequest =>
+      TApiGetOrganizationBillingOverviewRequest.decode(value),
+    responseSerialize: (value: TApiGetOrganizationBillingOverviewResponse): Buffer =>
+      Buffer.from(TApiGetOrganizationBillingOverviewResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiGetOrganizationBillingOverviewResponse =>
+      TApiGetOrganizationBillingOverviewResponse.decode(value),
+  },
+  getOrganizationUsageBreakdown: {
+    path: "/tyto.runtime.v1.TApiService/GetOrganizationUsageBreakdown" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiGetOrganizationUsageBreakdownRequest): Buffer =>
+      Buffer.from(TApiGetOrganizationUsageBreakdownRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiGetOrganizationUsageBreakdownRequest =>
+      TApiGetOrganizationUsageBreakdownRequest.decode(value),
+    responseSerialize: (value: TApiGetOrganizationUsageBreakdownResponse): Buffer =>
+      Buffer.from(TApiGetOrganizationUsageBreakdownResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiGetOrganizationUsageBreakdownResponse =>
+      TApiGetOrganizationUsageBreakdownResponse.decode(value),
+  },
+  getOrganizationUsageSeries: {
+    path: "/tyto.runtime.v1.TApiService/GetOrganizationUsageSeries" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiGetOrganizationUsageSeriesRequest): Buffer =>
+      Buffer.from(TApiGetOrganizationUsageSeriesRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiGetOrganizationUsageSeriesRequest =>
+      TApiGetOrganizationUsageSeriesRequest.decode(value),
+    responseSerialize: (value: TApiGetOrganizationUsageSeriesResponse): Buffer =>
+      Buffer.from(TApiGetOrganizationUsageSeriesResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiGetOrganizationUsageSeriesResponse =>
+      TApiGetOrganizationUsageSeriesResponse.decode(value),
+  },
+  listOrganizationPayments: {
+    path: "/tyto.runtime.v1.TApiService/ListOrganizationPayments" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiListOrganizationPaymentsRequest): Buffer =>
+      Buffer.from(TApiListOrganizationPaymentsRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiListOrganizationPaymentsRequest =>
+      TApiListOrganizationPaymentsRequest.decode(value),
+    responseSerialize: (value: TApiListOrganizationPaymentsResponse): Buffer =>
+      Buffer.from(TApiListOrganizationPaymentsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiListOrganizationPaymentsResponse =>
+      TApiListOrganizationPaymentsResponse.decode(value),
+  },
+  /**
+   * Workflows (durable jobs). A job runs one command or script on a sandbox --
+   * a new one this run creates and deletes, or one the caller already has --
+   * and survives a control-plane restart, because the run's state lives in
+   * the workflows module's durable engine rather than in any process here.
+   *
+   * These are the only public methods that reach the workflows module, and
+   * they reach it the way everything internal is reached: TApi authenticates
+   * and resolves the tenant, then calls it over a private transport that is
+   * not routed from outside. Nothing in the workflows schema is published.
+   *
+   * On a deployment with no workflows module configured every method here
+   * returns UNIMPLEMENTED, and the rest of this service behaves exactly as it
+   * did before they existed. Nothing on the Create or Exec path consults them.
+   */
+  runJob: {
+    path: "/tyto.runtime.v1.TApiService/RunJob" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiRunJobRequest): Buffer => Buffer.from(TApiRunJobRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiRunJobRequest => TApiRunJobRequest.decode(value),
+    responseSerialize: (value: TApiRunJobResponse): Buffer => Buffer.from(TApiRunJobResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiRunJobResponse => TApiRunJobResponse.decode(value),
+  },
+  startJob: {
+    path: "/tyto.runtime.v1.TApiService/StartJob" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiStartJobRequest): Buffer => Buffer.from(TApiStartJobRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiStartJobRequest => TApiStartJobRequest.decode(value),
+    responseSerialize: (value: TApiStartJobResponse): Buffer =>
+      Buffer.from(TApiStartJobResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiStartJobResponse => TApiStartJobResponse.decode(value),
+  },
+  getJobRun: {
+    path: "/tyto.runtime.v1.TApiService/GetJobRun" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiGetJobRunRequest): Buffer => Buffer.from(TApiGetJobRunRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiGetJobRunRequest => TApiGetJobRunRequest.decode(value),
+    responseSerialize: (value: TApiGetJobRunResponse): Buffer =>
+      Buffer.from(TApiGetJobRunResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiGetJobRunResponse => TApiGetJobRunResponse.decode(value),
+  },
+  listJobRuns: {
+    path: "/tyto.runtime.v1.TApiService/ListJobRuns" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiListJobRunsRequest): Buffer =>
+      Buffer.from(TApiListJobRunsRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiListJobRunsRequest => TApiListJobRunsRequest.decode(value),
+    responseSerialize: (value: TApiListJobRunsResponse): Buffer =>
+      Buffer.from(TApiListJobRunsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiListJobRunsResponse => TApiListJobRunsResponse.decode(value),
+  },
+  cancelJobRun: {
+    path: "/tyto.runtime.v1.TApiService/CancelJobRun" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiCancelJobRunRequest): Buffer =>
+      Buffer.from(TApiCancelJobRunRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiCancelJobRunRequest => TApiCancelJobRunRequest.decode(value),
+    responseSerialize: (value: TApiCancelJobRunResponse): Buffer =>
+      Buffer.from(TApiCancelJobRunResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiCancelJobRunResponse => TApiCancelJobRunResponse.decode(value),
+  },
+  /**
+   * Schedules: a durable cron, interval, or one-shot trigger for a job. "Run
+   * once at a specific date and time" is a schedule with a single fire, not a
+   * separate mechanism -- see TApiScheduleSpec.
+   */
+  createJobSchedule: {
+    path: "/tyto.runtime.v1.TApiService/CreateJobSchedule" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiCreateJobScheduleRequest): Buffer =>
+      Buffer.from(TApiCreateJobScheduleRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiCreateJobScheduleRequest => TApiCreateJobScheduleRequest.decode(value),
+    responseSerialize: (value: TApiCreateJobScheduleResponse): Buffer =>
+      Buffer.from(TApiCreateJobScheduleResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiCreateJobScheduleResponse => TApiCreateJobScheduleResponse.decode(value),
+  },
+  getJobSchedule: {
+    path: "/tyto.runtime.v1.TApiService/GetJobSchedule" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiGetJobScheduleRequest): Buffer =>
+      Buffer.from(TApiGetJobScheduleRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiGetJobScheduleRequest => TApiGetJobScheduleRequest.decode(value),
+    responseSerialize: (value: TApiGetJobScheduleResponse): Buffer =>
+      Buffer.from(TApiGetJobScheduleResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiGetJobScheduleResponse => TApiGetJobScheduleResponse.decode(value),
+  },
+  listJobSchedules: {
+    path: "/tyto.runtime.v1.TApiService/ListJobSchedules" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiListJobSchedulesRequest): Buffer =>
+      Buffer.from(TApiListJobSchedulesRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiListJobSchedulesRequest => TApiListJobSchedulesRequest.decode(value),
+    responseSerialize: (value: TApiListJobSchedulesResponse): Buffer =>
+      Buffer.from(TApiListJobSchedulesResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiListJobSchedulesResponse => TApiListJobSchedulesResponse.decode(value),
+  },
+  updateJobSchedule: {
+    path: "/tyto.runtime.v1.TApiService/UpdateJobSchedule" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiUpdateJobScheduleRequest): Buffer =>
+      Buffer.from(TApiUpdateJobScheduleRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiUpdateJobScheduleRequest => TApiUpdateJobScheduleRequest.decode(value),
+    responseSerialize: (value: TApiUpdateJobScheduleResponse): Buffer =>
+      Buffer.from(TApiUpdateJobScheduleResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiUpdateJobScheduleResponse => TApiUpdateJobScheduleResponse.decode(value),
+  },
+  setJobSchedulePaused: {
+    path: "/tyto.runtime.v1.TApiService/SetJobSchedulePaused" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiSetJobSchedulePausedRequest): Buffer =>
+      Buffer.from(TApiSetJobSchedulePausedRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiSetJobSchedulePausedRequest =>
+      TApiSetJobSchedulePausedRequest.decode(value),
+    responseSerialize: (value: TApiSetJobSchedulePausedResponse): Buffer =>
+      Buffer.from(TApiSetJobSchedulePausedResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiSetJobSchedulePausedResponse =>
+      TApiSetJobSchedulePausedResponse.decode(value),
+  },
+  triggerJobSchedule: {
+    path: "/tyto.runtime.v1.TApiService/TriggerJobSchedule" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiTriggerJobScheduleRequest): Buffer =>
+      Buffer.from(TApiTriggerJobScheduleRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiTriggerJobScheduleRequest => TApiTriggerJobScheduleRequest.decode(value),
+    responseSerialize: (value: TApiTriggerJobScheduleResponse): Buffer =>
+      Buffer.from(TApiTriggerJobScheduleResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiTriggerJobScheduleResponse =>
+      TApiTriggerJobScheduleResponse.decode(value),
+  },
+  deleteJobSchedule: {
+    path: "/tyto.runtime.v1.TApiService/DeleteJobSchedule" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiDeleteJobScheduleRequest): Buffer =>
+      Buffer.from(TApiDeleteJobScheduleRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiDeleteJobScheduleRequest => TApiDeleteJobScheduleRequest.decode(value),
+    responseSerialize: (value: TApiDeleteJobScheduleResponse): Buffer =>
+      Buffer.from(TApiDeleteJobScheduleResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiDeleteJobScheduleResponse => TApiDeleteJobScheduleResponse.decode(value),
+  },
+  /**
+   * ListTemplates reports the deployment's immutable template catalog: every
+   * template_id/version/digest binding Create and RunJob will accept, plus
+   * which version each template_id resolves to when a caller omits version.
+   * Read-only and the same for every caller, since the catalog is a
+   * deployment-wide artifact set, not tenant data -- unlike ListSandboxes,
+   * this does not resolve or filter by organization.
+   */
+  listTemplates: {
+    path: "/tyto.runtime.v1.TApiService/ListTemplates" as const,
+    requestStream: false as const,
+    responseStream: false as const,
+    requestSerialize: (value: TApiListTemplatesRequest): Buffer =>
+      Buffer.from(TApiListTemplatesRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): TApiListTemplatesRequest => TApiListTemplatesRequest.decode(value),
+    responseSerialize: (value: TApiListTemplatesResponse): Buffer =>
+      Buffer.from(TApiListTemplatesResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): TApiListTemplatesResponse => TApiListTemplatesResponse.decode(value),
+  },
 } as const;
 
 export interface TApiServiceServer extends UntypedServiceImplementation {
@@ -4052,6 +13903,90 @@ export interface TApiServiceServer extends UntypedServiceImplementation {
    * is a user credential and those are account-management operations.
    */
   listOrganizations: handleUnaryCall<TApiListOrganizationsRequest, TApiListOrganizationsResponse>;
+  /**
+   * Billing reads and top-up. Owner-only, unlike every other method here: a
+   * member can spend an organization's credit but cannot see its balance or
+   * add to it.
+   *
+   * These are the only public methods that reach the billing module, and they
+   * reach it the same way everything else does -- TApi authenticates and
+   * authorizes, then calls it over a private transport that is not routed from
+   * outside. Nothing in the billing schema is published.
+   */
+  getOrganizationBilling: handleUnaryCall<TApiGetOrganizationBillingRequest, TApiGetOrganizationBillingResponse>;
+  listOrganizationTopUpOffers: handleUnaryCall<
+    TApiListOrganizationTopUpOffersRequest,
+    TApiListOrganizationTopUpOffersResponse
+  >;
+  startOrganizationTopUpPurchase: handleUnaryCall<
+    TApiStartOrganizationTopUpPurchaseRequest,
+    TApiStartOrganizationTopUpPurchaseResponse
+  >;
+  applyOrganizationCoupon: handleUnaryCall<TApiApplyOrganizationCouponRequest, TApiApplyOrganizationCouponResponse>;
+  listOrganizationCoupons: handleUnaryCall<TApiListOrganizationCouponsRequest, TApiListOrganizationCouponsResponse>;
+  listOrganizationInvoices: handleUnaryCall<TApiListOrganizationInvoicesRequest, TApiListOrganizationInvoicesResponse>;
+  getOrganizationInvoice: handleUnaryCall<TApiGetOrganizationInvoiceRequest, TApiGetOrganizationInvoiceResponse>;
+  /**
+   * GetOrganizationBillingOverview, ListOrganizationUsageBreakdown,
+   * ListOrganizationUsageSeries, and ListOrganizationPayments are the
+   * dashboard reads added in docs/billing-dashboard-api.md (Phase 8). All
+   * four require the owner or billing role, exactly like the billing RPCs
+   * above.
+   */
+  getOrganizationBillingOverview: handleUnaryCall<
+    TApiGetOrganizationBillingOverviewRequest,
+    TApiGetOrganizationBillingOverviewResponse
+  >;
+  getOrganizationUsageBreakdown: handleUnaryCall<
+    TApiGetOrganizationUsageBreakdownRequest,
+    TApiGetOrganizationUsageBreakdownResponse
+  >;
+  getOrganizationUsageSeries: handleUnaryCall<
+    TApiGetOrganizationUsageSeriesRequest,
+    TApiGetOrganizationUsageSeriesResponse
+  >;
+  listOrganizationPayments: handleUnaryCall<TApiListOrganizationPaymentsRequest, TApiListOrganizationPaymentsResponse>;
+  /**
+   * Workflows (durable jobs). A job runs one command or script on a sandbox --
+   * a new one this run creates and deletes, or one the caller already has --
+   * and survives a control-plane restart, because the run's state lives in
+   * the workflows module's durable engine rather than in any process here.
+   *
+   * These are the only public methods that reach the workflows module, and
+   * they reach it the way everything internal is reached: TApi authenticates
+   * and resolves the tenant, then calls it over a private transport that is
+   * not routed from outside. Nothing in the workflows schema is published.
+   *
+   * On a deployment with no workflows module configured every method here
+   * returns UNIMPLEMENTED, and the rest of this service behaves exactly as it
+   * did before they existed. Nothing on the Create or Exec path consults them.
+   */
+  runJob: handleUnaryCall<TApiRunJobRequest, TApiRunJobResponse>;
+  startJob: handleUnaryCall<TApiStartJobRequest, TApiStartJobResponse>;
+  getJobRun: handleUnaryCall<TApiGetJobRunRequest, TApiGetJobRunResponse>;
+  listJobRuns: handleUnaryCall<TApiListJobRunsRequest, TApiListJobRunsResponse>;
+  cancelJobRun: handleUnaryCall<TApiCancelJobRunRequest, TApiCancelJobRunResponse>;
+  /**
+   * Schedules: a durable cron, interval, or one-shot trigger for a job. "Run
+   * once at a specific date and time" is a schedule with a single fire, not a
+   * separate mechanism -- see TApiScheduleSpec.
+   */
+  createJobSchedule: handleUnaryCall<TApiCreateJobScheduleRequest, TApiCreateJobScheduleResponse>;
+  getJobSchedule: handleUnaryCall<TApiGetJobScheduleRequest, TApiGetJobScheduleResponse>;
+  listJobSchedules: handleUnaryCall<TApiListJobSchedulesRequest, TApiListJobSchedulesResponse>;
+  updateJobSchedule: handleUnaryCall<TApiUpdateJobScheduleRequest, TApiUpdateJobScheduleResponse>;
+  setJobSchedulePaused: handleUnaryCall<TApiSetJobSchedulePausedRequest, TApiSetJobSchedulePausedResponse>;
+  triggerJobSchedule: handleUnaryCall<TApiTriggerJobScheduleRequest, TApiTriggerJobScheduleResponse>;
+  deleteJobSchedule: handleUnaryCall<TApiDeleteJobScheduleRequest, TApiDeleteJobScheduleResponse>;
+  /**
+   * ListTemplates reports the deployment's immutable template catalog: every
+   * template_id/version/digest binding Create and RunJob will accept, plus
+   * which version each template_id resolves to when a caller omits version.
+   * Read-only and the same for every caller, since the catalog is a
+   * deployment-wide artifact set, not tenant data -- unlike ListSandboxes,
+   * this does not resolve or filter by organization.
+   */
+  listTemplates: handleUnaryCall<TApiListTemplatesRequest, TApiListTemplatesResponse>;
 }
 
 export interface TApiServiceClient extends Client {
@@ -4252,6 +14187,411 @@ export interface TApiServiceClient extends Client {
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: TApiListOrganizationsResponse) => void,
   ): ClientUnaryCall;
+  /**
+   * Billing reads and top-up. Owner-only, unlike every other method here: a
+   * member can spend an organization's credit but cannot see its balance or
+   * add to it.
+   *
+   * These are the only public methods that reach the billing module, and they
+   * reach it the same way everything else does -- TApi authenticates and
+   * authorizes, then calls it over a private transport that is not routed from
+   * outside. Nothing in the billing schema is published.
+   */
+  getOrganizationBilling(
+    request: TApiGetOrganizationBillingRequest,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationBillingResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationBilling(
+    request: TApiGetOrganizationBillingRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationBillingResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationBilling(
+    request: TApiGetOrganizationBillingRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationBillingResponse) => void,
+  ): ClientUnaryCall;
+  listOrganizationTopUpOffers(
+    request: TApiListOrganizationTopUpOffersRequest,
+    callback: (error: ServiceError | null, response: TApiListOrganizationTopUpOffersResponse) => void,
+  ): ClientUnaryCall;
+  listOrganizationTopUpOffers(
+    request: TApiListOrganizationTopUpOffersRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiListOrganizationTopUpOffersResponse) => void,
+  ): ClientUnaryCall;
+  listOrganizationTopUpOffers(
+    request: TApiListOrganizationTopUpOffersRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiListOrganizationTopUpOffersResponse) => void,
+  ): ClientUnaryCall;
+  startOrganizationTopUpPurchase(
+    request: TApiStartOrganizationTopUpPurchaseRequest,
+    callback: (error: ServiceError | null, response: TApiStartOrganizationTopUpPurchaseResponse) => void,
+  ): ClientUnaryCall;
+  startOrganizationTopUpPurchase(
+    request: TApiStartOrganizationTopUpPurchaseRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiStartOrganizationTopUpPurchaseResponse) => void,
+  ): ClientUnaryCall;
+  startOrganizationTopUpPurchase(
+    request: TApiStartOrganizationTopUpPurchaseRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiStartOrganizationTopUpPurchaseResponse) => void,
+  ): ClientUnaryCall;
+  applyOrganizationCoupon(
+    request: TApiApplyOrganizationCouponRequest,
+    callback: (error: ServiceError | null, response: TApiApplyOrganizationCouponResponse) => void,
+  ): ClientUnaryCall;
+  applyOrganizationCoupon(
+    request: TApiApplyOrganizationCouponRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiApplyOrganizationCouponResponse) => void,
+  ): ClientUnaryCall;
+  applyOrganizationCoupon(
+    request: TApiApplyOrganizationCouponRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiApplyOrganizationCouponResponse) => void,
+  ): ClientUnaryCall;
+  listOrganizationCoupons(
+    request: TApiListOrganizationCouponsRequest,
+    callback: (error: ServiceError | null, response: TApiListOrganizationCouponsResponse) => void,
+  ): ClientUnaryCall;
+  listOrganizationCoupons(
+    request: TApiListOrganizationCouponsRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiListOrganizationCouponsResponse) => void,
+  ): ClientUnaryCall;
+  listOrganizationCoupons(
+    request: TApiListOrganizationCouponsRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiListOrganizationCouponsResponse) => void,
+  ): ClientUnaryCall;
+  listOrganizationInvoices(
+    request: TApiListOrganizationInvoicesRequest,
+    callback: (error: ServiceError | null, response: TApiListOrganizationInvoicesResponse) => void,
+  ): ClientUnaryCall;
+  listOrganizationInvoices(
+    request: TApiListOrganizationInvoicesRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiListOrganizationInvoicesResponse) => void,
+  ): ClientUnaryCall;
+  listOrganizationInvoices(
+    request: TApiListOrganizationInvoicesRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiListOrganizationInvoicesResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationInvoice(
+    request: TApiGetOrganizationInvoiceRequest,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationInvoiceResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationInvoice(
+    request: TApiGetOrganizationInvoiceRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationInvoiceResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationInvoice(
+    request: TApiGetOrganizationInvoiceRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationInvoiceResponse) => void,
+  ): ClientUnaryCall;
+  /**
+   * GetOrganizationBillingOverview, ListOrganizationUsageBreakdown,
+   * ListOrganizationUsageSeries, and ListOrganizationPayments are the
+   * dashboard reads added in docs/billing-dashboard-api.md (Phase 8). All
+   * four require the owner or billing role, exactly like the billing RPCs
+   * above.
+   */
+  getOrganizationBillingOverview(
+    request: TApiGetOrganizationBillingOverviewRequest,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationBillingOverviewResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationBillingOverview(
+    request: TApiGetOrganizationBillingOverviewRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationBillingOverviewResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationBillingOverview(
+    request: TApiGetOrganizationBillingOverviewRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationBillingOverviewResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationUsageBreakdown(
+    request: TApiGetOrganizationUsageBreakdownRequest,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationUsageBreakdownResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationUsageBreakdown(
+    request: TApiGetOrganizationUsageBreakdownRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationUsageBreakdownResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationUsageBreakdown(
+    request: TApiGetOrganizationUsageBreakdownRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationUsageBreakdownResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationUsageSeries(
+    request: TApiGetOrganizationUsageSeriesRequest,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationUsageSeriesResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationUsageSeries(
+    request: TApiGetOrganizationUsageSeriesRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationUsageSeriesResponse) => void,
+  ): ClientUnaryCall;
+  getOrganizationUsageSeries(
+    request: TApiGetOrganizationUsageSeriesRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiGetOrganizationUsageSeriesResponse) => void,
+  ): ClientUnaryCall;
+  listOrganizationPayments(
+    request: TApiListOrganizationPaymentsRequest,
+    callback: (error: ServiceError | null, response: TApiListOrganizationPaymentsResponse) => void,
+  ): ClientUnaryCall;
+  listOrganizationPayments(
+    request: TApiListOrganizationPaymentsRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiListOrganizationPaymentsResponse) => void,
+  ): ClientUnaryCall;
+  listOrganizationPayments(
+    request: TApiListOrganizationPaymentsRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiListOrganizationPaymentsResponse) => void,
+  ): ClientUnaryCall;
+  /**
+   * Workflows (durable jobs). A job runs one command or script on a sandbox --
+   * a new one this run creates and deletes, or one the caller already has --
+   * and survives a control-plane restart, because the run's state lives in
+   * the workflows module's durable engine rather than in any process here.
+   *
+   * These are the only public methods that reach the workflows module, and
+   * they reach it the way everything internal is reached: TApi authenticates
+   * and resolves the tenant, then calls it over a private transport that is
+   * not routed from outside. Nothing in the workflows schema is published.
+   *
+   * On a deployment with no workflows module configured every method here
+   * returns UNIMPLEMENTED, and the rest of this service behaves exactly as it
+   * did before they existed. Nothing on the Create or Exec path consults them.
+   */
+  runJob(
+    request: TApiRunJobRequest,
+    callback: (error: ServiceError | null, response: TApiRunJobResponse) => void,
+  ): ClientUnaryCall;
+  runJob(
+    request: TApiRunJobRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiRunJobResponse) => void,
+  ): ClientUnaryCall;
+  runJob(
+    request: TApiRunJobRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiRunJobResponse) => void,
+  ): ClientUnaryCall;
+  startJob(
+    request: TApiStartJobRequest,
+    callback: (error: ServiceError | null, response: TApiStartJobResponse) => void,
+  ): ClientUnaryCall;
+  startJob(
+    request: TApiStartJobRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiStartJobResponse) => void,
+  ): ClientUnaryCall;
+  startJob(
+    request: TApiStartJobRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiStartJobResponse) => void,
+  ): ClientUnaryCall;
+  getJobRun(
+    request: TApiGetJobRunRequest,
+    callback: (error: ServiceError | null, response: TApiGetJobRunResponse) => void,
+  ): ClientUnaryCall;
+  getJobRun(
+    request: TApiGetJobRunRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiGetJobRunResponse) => void,
+  ): ClientUnaryCall;
+  getJobRun(
+    request: TApiGetJobRunRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiGetJobRunResponse) => void,
+  ): ClientUnaryCall;
+  listJobRuns(
+    request: TApiListJobRunsRequest,
+    callback: (error: ServiceError | null, response: TApiListJobRunsResponse) => void,
+  ): ClientUnaryCall;
+  listJobRuns(
+    request: TApiListJobRunsRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiListJobRunsResponse) => void,
+  ): ClientUnaryCall;
+  listJobRuns(
+    request: TApiListJobRunsRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiListJobRunsResponse) => void,
+  ): ClientUnaryCall;
+  cancelJobRun(
+    request: TApiCancelJobRunRequest,
+    callback: (error: ServiceError | null, response: TApiCancelJobRunResponse) => void,
+  ): ClientUnaryCall;
+  cancelJobRun(
+    request: TApiCancelJobRunRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiCancelJobRunResponse) => void,
+  ): ClientUnaryCall;
+  cancelJobRun(
+    request: TApiCancelJobRunRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiCancelJobRunResponse) => void,
+  ): ClientUnaryCall;
+  /**
+   * Schedules: a durable cron, interval, or one-shot trigger for a job. "Run
+   * once at a specific date and time" is a schedule with a single fire, not a
+   * separate mechanism -- see TApiScheduleSpec.
+   */
+  createJobSchedule(
+    request: TApiCreateJobScheduleRequest,
+    callback: (error: ServiceError | null, response: TApiCreateJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  createJobSchedule(
+    request: TApiCreateJobScheduleRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiCreateJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  createJobSchedule(
+    request: TApiCreateJobScheduleRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiCreateJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  getJobSchedule(
+    request: TApiGetJobScheduleRequest,
+    callback: (error: ServiceError | null, response: TApiGetJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  getJobSchedule(
+    request: TApiGetJobScheduleRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiGetJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  getJobSchedule(
+    request: TApiGetJobScheduleRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiGetJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  listJobSchedules(
+    request: TApiListJobSchedulesRequest,
+    callback: (error: ServiceError | null, response: TApiListJobSchedulesResponse) => void,
+  ): ClientUnaryCall;
+  listJobSchedules(
+    request: TApiListJobSchedulesRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiListJobSchedulesResponse) => void,
+  ): ClientUnaryCall;
+  listJobSchedules(
+    request: TApiListJobSchedulesRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiListJobSchedulesResponse) => void,
+  ): ClientUnaryCall;
+  updateJobSchedule(
+    request: TApiUpdateJobScheduleRequest,
+    callback: (error: ServiceError | null, response: TApiUpdateJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  updateJobSchedule(
+    request: TApiUpdateJobScheduleRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiUpdateJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  updateJobSchedule(
+    request: TApiUpdateJobScheduleRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiUpdateJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  setJobSchedulePaused(
+    request: TApiSetJobSchedulePausedRequest,
+    callback: (error: ServiceError | null, response: TApiSetJobSchedulePausedResponse) => void,
+  ): ClientUnaryCall;
+  setJobSchedulePaused(
+    request: TApiSetJobSchedulePausedRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiSetJobSchedulePausedResponse) => void,
+  ): ClientUnaryCall;
+  setJobSchedulePaused(
+    request: TApiSetJobSchedulePausedRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiSetJobSchedulePausedResponse) => void,
+  ): ClientUnaryCall;
+  triggerJobSchedule(
+    request: TApiTriggerJobScheduleRequest,
+    callback: (error: ServiceError | null, response: TApiTriggerJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  triggerJobSchedule(
+    request: TApiTriggerJobScheduleRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiTriggerJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  triggerJobSchedule(
+    request: TApiTriggerJobScheduleRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiTriggerJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  deleteJobSchedule(
+    request: TApiDeleteJobScheduleRequest,
+    callback: (error: ServiceError | null, response: TApiDeleteJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  deleteJobSchedule(
+    request: TApiDeleteJobScheduleRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiDeleteJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  deleteJobSchedule(
+    request: TApiDeleteJobScheduleRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiDeleteJobScheduleResponse) => void,
+  ): ClientUnaryCall;
+  /**
+   * ListTemplates reports the deployment's immutable template catalog: every
+   * template_id/version/digest binding Create and RunJob will accept, plus
+   * which version each template_id resolves to when a caller omits version.
+   * Read-only and the same for every caller, since the catalog is a
+   * deployment-wide artifact set, not tenant data -- unlike ListSandboxes,
+   * this does not resolve or filter by organization.
+   */
+  listTemplates(
+    request: TApiListTemplatesRequest,
+    callback: (error: ServiceError | null, response: TApiListTemplatesResponse) => void,
+  ): ClientUnaryCall;
+  listTemplates(
+    request: TApiListTemplatesRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: TApiListTemplatesResponse) => void,
+  ): ClientUnaryCall;
+  listTemplates(
+    request: TApiListTemplatesRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: TApiListTemplatesResponse) => void,
+  ): ClientUnaryCall;
 }
 
 export const TApiServiceClient = makeGenericClientConstructor(
@@ -4263,78 +14603,13 @@ export const TApiServiceClient = makeGenericClientConstructor(
   serviceName: string;
 };
 
-export type TApiHostReportServiceService = typeof TApiHostReportServiceService;
-export const TApiHostReportServiceService = {
-  reportObservedState: {
-    path: "/tyto.runtime.v1.TApiHostReportService/ReportObservedState" as const,
-    requestStream: false as const,
-    responseStream: false as const,
-    requestSerialize: (value: ReportObservedStateRequest): Buffer =>
-      Buffer.from(ReportObservedStateRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): ReportObservedStateRequest => ReportObservedStateRequest.decode(value),
-    responseSerialize: (value: ReportObservedStateResponse): Buffer =>
-      Buffer.from(ReportObservedStateResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): ReportObservedStateResponse => ReportObservedStateResponse.decode(value),
-  },
-  reportTerminal: {
-    path: "/tyto.runtime.v1.TApiHostReportService/ReportTerminal" as const,
-    requestStream: false as const,
-    responseStream: false as const,
-    requestSerialize: (value: ReportTerminalRequest): Buffer =>
-      Buffer.from(ReportTerminalRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): ReportTerminalRequest => ReportTerminalRequest.decode(value),
-    responseSerialize: (value: ReportTerminalResponse): Buffer =>
-      Buffer.from(ReportTerminalResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): ReportTerminalResponse => ReportTerminalResponse.decode(value),
-  },
-} as const;
-
-export interface TApiHostReportServiceServer extends UntypedServiceImplementation {
-  reportObservedState: handleUnaryCall<ReportObservedStateRequest, ReportObservedStateResponse>;
-  reportTerminal: handleUnaryCall<ReportTerminalRequest, ReportTerminalResponse>;
+function bytesFromBase64(b64: string): Uint8Array {
+  return Uint8Array.from(globalThis.Buffer.from(b64, "base64"));
 }
 
-export interface TApiHostReportServiceClient extends Client {
-  reportObservedState(
-    request: ReportObservedStateRequest,
-    callback: (error: ServiceError | null, response: ReportObservedStateResponse) => void,
-  ): ClientUnaryCall;
-  reportObservedState(
-    request: ReportObservedStateRequest,
-    metadata: Metadata,
-    callback: (error: ServiceError | null, response: ReportObservedStateResponse) => void,
-  ): ClientUnaryCall;
-  reportObservedState(
-    request: ReportObservedStateRequest,
-    metadata: Metadata,
-    options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: ReportObservedStateResponse) => void,
-  ): ClientUnaryCall;
-  reportTerminal(
-    request: ReportTerminalRequest,
-    callback: (error: ServiceError | null, response: ReportTerminalResponse) => void,
-  ): ClientUnaryCall;
-  reportTerminal(
-    request: ReportTerminalRequest,
-    metadata: Metadata,
-    callback: (error: ServiceError | null, response: ReportTerminalResponse) => void,
-  ): ClientUnaryCall;
-  reportTerminal(
-    request: ReportTerminalRequest,
-    metadata: Metadata,
-    options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: ReportTerminalResponse) => void,
-  ): ClientUnaryCall;
+function base64FromBytes(arr: Uint8Array): string {
+  return globalThis.Buffer.from(arr).toString("base64");
 }
-
-export const TApiHostReportServiceClient = makeGenericClientConstructor(
-  TApiHostReportServiceService,
-  "tyto.runtime.v1.TApiHostReportService",
-) as unknown as {
-  new (address: string, credentials: ChannelCredentials, options?: Partial<ClientOptions>): TApiHostReportServiceClient;
-  service: typeof TApiHostReportServiceService;
-  serviceName: string;
-};
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 
@@ -4353,6 +14628,10 @@ function longToNumber(int64: { toString(): string }): number {
     throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
   }
   return num;
+}
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
 }
 
 function isSet(value: any): boolean {

@@ -23,20 +23,20 @@ function makeSessionsClient(guest: FakeSessionGuest) {
   return { client, transport };
 }
 
-describe("SandboxSessions", () => {
+describe("Sandbox session methods", () => {
   it("create/list/kill return typed SessionInfo", async () => {
     const guest = new FakeSessionGuest();
     const { client } = makeSessionsClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    const created = await sandbox.sessions.create("server", ["bash"], { cols: 120, rows: 40 });
+    const created = await sandbox.createSession("server", ["bash"], { cols: 120, rows: 40 });
     expect(created.name).toBe("server");
     expect(created.status).toBe(SessionStatus.STARTING);
 
-    const list = await sandbox.sessions.list();
+    const list = await sandbox.listSessions();
     expect(list.sandboxSuspended).toBe(false);
 
-    const killed = await sandbox.sessions.kill("server");
+    const killed = await sandbox.killSession("server");
     expect(killed.status).toBe(SessionStatus.KILLED);
     expect(killed.exit?.exitCode).toBe(0);
   });
@@ -46,21 +46,21 @@ describe("SandboxSessions", () => {
     guest.listSessionsImpl = (_request, _metadata, _options, callback) =>
       callback(null, { sessions: [], sandboxSuspended: true });
     const { client } = makeSessionsClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    const list = await sandbox.sessions.list();
+    const list = await sandbox.listSessions();
     expect(list.sandboxSuspended).toBe(true);
   });
 
   it("validates name, command, and dimensions before the RPC", async () => {
     const guest = new FakeSessionGuest();
     const { client } = makeSessionsClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    await expect(sandbox.sessions.create("", ["bash"])).rejects.toThrow(InvalidRequestError);
-    await expect(sandbox.sessions.create("Server", ["bash"])).rejects.toThrow(InvalidRequestError);
-    await expect(sandbox.sessions.create("server", [])).rejects.toThrow(InvalidRequestError);
-    await expect(sandbox.sessions.create("server", ["bash"], { cols: 600 })).rejects.toThrow(InvalidRequestError);
+    await expect(sandbox.createSession("", ["bash"])).rejects.toThrow(InvalidRequestError);
+    await expect(sandbox.createSession("Server", ["bash"])).rejects.toThrow(InvalidRequestError);
+    await expect(sandbox.createSession("server", [])).rejects.toThrow(InvalidRequestError);
+    await expect(sandbox.createSession("server", ["bash"], { cols: 600 })).rejects.toThrow(InvalidRequestError);
     expect(guest.createRequests).toHaveLength(0);
   });
 
@@ -69,10 +69,10 @@ describe("SandboxSessions", () => {
     guest.createSessionImpl = (_r, _m, _o, callback) => callback(new RpcFailure(grpc.status.ALREADY_EXISTS, "exists"));
     guest.killSessionImpl = (_r, _m, _o, callback) => callback(new RpcFailure(grpc.status.NOT_FOUND, "missing"));
     const { client } = makeSessionsClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    await expect(sandbox.sessions.create("server", ["bash"])).rejects.toThrow(SessionExists);
-    await expect(sandbox.sessions.kill("missing")).rejects.toThrow(SessionNotFoundError);
+    await expect(sandbox.createSession("server", ["bash"])).rejects.toThrow(SessionExists);
+    await expect(sandbox.killSession("missing")).rejects.toThrow(SessionNotFoundError);
   });
 
   it("attaches, surfaces replay metadata immediately, and iterates output then exit", async () => {
@@ -84,9 +84,9 @@ describe("SandboxSessions", () => {
         () => ({ exit: { exitCode: 0, signaled: false, signal: 0 } }),
       ]);
     const { client } = makeSessionsClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    const stream = await sandbox.sessions.attach("server");
+    const stream = await sandbox.attachSession("server");
     expect(stream.replayedBytes).toBe(42);
     expect(stream.historyDropped).toBe(true);
     expect(stream.info.name).toBe("server");
@@ -109,9 +109,9 @@ describe("SandboxSessions", () => {
         () => "END",
       ]);
     const { client } = makeSessionsClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    const stream = await sandbox.sessions.attach("server");
+    const stream = await sandbox.attachSession("server");
     const events = [];
     for await (const event of stream) {
       events.push(event);
@@ -124,9 +124,9 @@ describe("SandboxSessions", () => {
     guest.attachSessionImpl = () =>
       new FakeAttachStream([() => acceptedFrame(), () => ({ ended: { reason: 2 } })]);
     const { client } = makeSessionsClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    const stream = await sandbox.sessions.attach("server");
+    const stream = await sandbox.attachSession("server");
     const events = [];
     for await (const event of stream) {
       events.push(event);
@@ -147,9 +147,9 @@ describe("SandboxSessions", () => {
       callback(null, { sessions: [], sandboxSuspended: false });
     };
     const { client, transport } = makeSessionsClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    await sandbox.sessions.list();
+    await sandbox.listSessions();
     expect(transport.tapi.reissueRequests).toHaveLength(1);
     expect(calls).toBe(2);
   });
@@ -158,9 +158,9 @@ describe("SandboxSessions", () => {
     const guest = new FakeSessionGuest();
     guest.listSessionsImpl = (_r, _m, _o, callback) => callback(new RpcFailure(grpc.status.PERMISSION_DENIED, "denied"));
     const { client, transport } = makeSessionsClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    await expect(sandbox.sessions.list()).rejects.toThrow();
+    await expect(sandbox.listSessions()).rejects.toThrow();
     expect(transport.tapi.reissueRequests).toHaveLength(0);
   });
 });

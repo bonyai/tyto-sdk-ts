@@ -40,7 +40,7 @@ export function makeMetadata(
   return {
     sandboxId,
     operationId: options.operationId ?? `op-${sandboxId}`,
-    resolvedTemplateId: "ubuntu-24.04",
+    resolvedTemplateId: "bonya-dev",
     resolvedTemplateVersion: "dev",
     observed: {
       state: statusToTerminalState(options.status ?? Status.RUNNING),
@@ -123,7 +123,7 @@ export class FakeTapi {
       sandboxId: "sbx-1",
       execCapabilityJws: "secret-cap",
       execEndpoint: "https://exec.example.test/edge",
-      resolvedTemplateId: "ubuntu-24.04",
+      resolvedTemplateId: "bonya-dev",
       resolvedTemplateVersion: "dev",
       name: request.name || this.generatedName,
     });
@@ -382,6 +382,181 @@ export class FakeTapi {
       { organizationId: "org-personal", name: "personal", personal: true, role: "owner", createdAtUnixNanos: 1 },
     ];
     callback(null, { organizations });
+    return fakeCall();
+  };
+
+  listTemplatesErrors = queue<grpc.ServiceError>();
+  runJobErrors = queue<grpc.ServiceError>();
+  startJobErrors = queue<grpc.ServiceError>();
+  getJobRunErrors = queue<grpc.ServiceError>();
+  listJobRunsErrors = queue<grpc.ServiceError>();
+  cancelJobRunErrors = queue<grpc.ServiceError>();
+  createJobScheduleErrors = queue<grpc.ServiceError>();
+  getJobScheduleErrors = queue<grpc.ServiceError>();
+  listJobSchedulesErrors = queue<grpc.ServiceError>();
+  updateJobScheduleErrors = queue<grpc.ServiceError>();
+  setJobSchedulePausedErrors = queue<grpc.ServiceError>();
+  triggerJobScheduleErrors = queue<grpc.ServiceError>();
+  deleteJobScheduleErrors = queue<grpc.ServiceError>();
+
+  runJobRequests: any[] = [];
+  startJobRequests: any[] = [];
+  createJobScheduleRequests: any[] = [];
+  updateJobScheduleRequests: any[] = [];
+
+  /** None means a small default catalog; set to override, including empty. */
+  templates: any[] | undefined;
+  /** None means RunJob synthesizes a default completed run. */
+  jobRun: any | undefined;
+  /** None means GetJobRun synthesizes a default detail. */
+  jobRunDetail: any | undefined;
+  /** None means ListJobRuns synthesizes a single default run. */
+  jobRuns: any[] | undefined;
+  /** None means schedule calls synthesize a default schedule. */
+  jobSchedule: any | undefined;
+  /** None means ListJobSchedules synthesizes a single default schedule. */
+  jobSchedules: any[] | undefined;
+
+  listTemplates: UnaryMethod<any, any> = (_request, _metadata, callback) => {
+    const error = this.listTemplatesErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    const templates = this.templates ?? [
+      { templateId: "bonya-dev", version: "1", digest: "sha256:default", isDefault: true },
+    ];
+    callback(null, { templates });
+    return fakeCall();
+  };
+
+  runJob: UnaryMethod<any, any> = (request, _metadata, callback) => {
+    this.runJobRequests.push(request);
+    const error = this.runJobErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    const run = this.jobRun ?? { runId: "run-1", status: 2 /* COMPLETED */, result: { exitCode: 0 } };
+    callback(null, { run });
+    return fakeCall();
+  };
+
+  startJob: UnaryMethod<any, any> = (request, _metadata, callback) => {
+    this.startJobRequests.push(request);
+    const error = this.startJobErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    callback(null, { runId: "run-1", alreadyRunning: false });
+    return fakeCall();
+  };
+
+  getJobRun: UnaryMethod<any, any> = (request, _metadata, callback) => {
+    const error = this.getJobRunErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    const detail = this.jobRunDetail ?? { run: { runId: request.runId, status: 2 } };
+    callback(null, { detail });
+    return fakeCall();
+  };
+
+  listJobRuns: UnaryMethod<any, any> = (_request, _metadata, callback) => {
+    const error = this.listJobRunsErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    const runs = this.jobRuns ?? [{ runId: "run-1", status: 2 }];
+    callback(null, { runs });
+    return fakeCall();
+  };
+
+  cancelJobRun: UnaryMethod<any, any> = (_request, _metadata, callback) => {
+    const error = this.cancelJobRunErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    callback(null, {});
+    return fakeCall();
+  };
+
+  createJobSchedule: UnaryMethod<any, any> = (request, _metadata, callback) => {
+    this.createJobScheduleRequests.push(request);
+    const error = this.createJobScheduleErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    const schedule = this.jobSchedule ?? { scheduleId: "sched-1", schedule: request.schedule, spec: request.spec };
+    callback(null, { schedule });
+    return fakeCall();
+  };
+
+  getJobSchedule: UnaryMethod<any, any> = (request, _metadata, callback) => {
+    const error = this.getJobScheduleErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    const schedule = this.jobSchedule ?? { scheduleId: request.scheduleId };
+    callback(null, { schedule });
+    return fakeCall();
+  };
+
+  listJobSchedules: UnaryMethod<any, any> = (_request, _metadata, callback) => {
+    const error = this.listJobSchedulesErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    const schedules = this.jobSchedules ?? [{ scheduleId: "sched-1" }];
+    callback(null, { schedules });
+    return fakeCall();
+  };
+
+  updateJobSchedule: UnaryMethod<any, any> = (request, _metadata, callback) => {
+    this.updateJobScheduleRequests.push(request);
+    const error = this.updateJobScheduleErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    callback(null, { schedule: { scheduleId: request.scheduleId, schedule: request.schedule, spec: request.spec } });
+    return fakeCall();
+  };
+
+  setJobSchedulePaused: UnaryMethod<any, any> = (request, _metadata, callback) => {
+    const error = this.setJobSchedulePausedErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    callback(null, { schedule: { scheduleId: request.scheduleId, paused: request.paused, note: request.note } });
+    return fakeCall();
+  };
+
+  triggerJobSchedule: UnaryMethod<any, any> = (_request, _metadata, callback) => {
+    const error = this.triggerJobScheduleErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    callback(null, {});
+    return fakeCall();
+  };
+
+  deleteJobSchedule: UnaryMethod<any, any> = (_request, _metadata, callback) => {
+    const error = this.deleteJobScheduleErrors.shift();
+    if (error) {
+      callback(error);
+      return fakeCall();
+    }
+    callback(null, {});
     return fakeCall();
   };
 }

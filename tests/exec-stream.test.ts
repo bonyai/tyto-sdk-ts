@@ -9,7 +9,7 @@ describe("Sandbox.exec (buffered)", () => {
   it("collects stdout/stderr and exit, decoding stderr with replacement", async () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     const result = await sandbox.exec("printf ready");
 
@@ -22,7 +22,7 @@ describe("Sandbox.exec (buffered)", () => {
     const transport = makeFakeTransport();
     transport.guest.execImpl = () => new FakeExecStream([{ exit: { exitCode: 2, signaled: false, signal: 0 } }]);
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     await expect(sandbox.exec(["false"], { check: true })).rejects.toMatchObject({
       result: { exitCode: 2 },
@@ -32,7 +32,7 @@ describe("Sandbox.exec (buffered)", () => {
   it("writes stdin and half-closes when input is provided", async () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     const result = await sandbox.exec(["cat"], { input: "snowman: ☃\n" });
     expect(result.stdout).toBe("ready");
@@ -43,7 +43,7 @@ describe("Sandbox.exec (buffered)", () => {
   it("rejects input when tty=true", async () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
     await expect(sandbox.exec(["sh"], { tty: true, input: "" })).rejects.toThrow(InvalidRequestError);
     expect(transport.guest.calls).toBe(0);
   });
@@ -51,7 +51,7 @@ describe("Sandbox.exec (buffered)", () => {
   it("validates env keys/values and cwd before any RPC", async () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
     transport.guest.calls = 0;
 
     await expect(sandbox.exec(["true"], { env: { "": "value" } })).rejects.toThrow(InvalidRequestError);
@@ -63,7 +63,7 @@ describe("Sandbox.exec (buffered)", () => {
   it("serializes env and cwd onto the start frame", async () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     await sandbox.exec(["python3", "worker.py"], { env: { MODE: "development" }, cwd: "/workspace" });
 
@@ -78,7 +78,7 @@ describe("Sandbox.execStream (streaming)", () => {
   it("emits Stdout, Stderr, then Exit and supports half-close via write/closeStdin", async () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     const session = sandbox.execStream(["cat"]);
     session.write(new TextEncoder().encode("input\n"));
@@ -97,7 +97,7 @@ describe("Sandbox.execStream (streaming)", () => {
   it("rejects tty dimension combinations", async () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     expect(() => sandbox.execStream(["sh"], { tty: true, cols: 80 })).toThrow(InvalidRequestError);
     expect(() => sandbox.execStream(["sh"], { tty: true, cols: 0, rows: 24 })).toThrow(InvalidRequestError);
@@ -109,7 +109,7 @@ describe("Sandbox.execStream (streaming)", () => {
     const transport = makeFakeTransport();
     transport.tapi.sourceStatuses["sbx-1"] = Status.FAILED;
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.get("sbx-1");
+    const sandbox = await client.getSandbox("sbx-1");
 
     await expect(sandbox.exec(["printf", "x"])).rejects.toThrow();
     expect(transport.guest.calls).toBe(0);
@@ -120,7 +120,7 @@ describe("Sandbox.execStream (streaming)", () => {
     transport.guest.fail = true;
     transport.guest.failure = new RpcFailure(grpc.status.PERMISSION_DENIED, "exec capability rejected secret-cap");
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     await expect(sandbox.exec(["false"])).rejects.toBeInstanceOf(CapabilityRejectedError);
     expect(transport.guest.calls).toBe(1);

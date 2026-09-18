@@ -16,7 +16,7 @@ async function main(): Promise<void> {
   const client = new Tyto({ apiKey });
 
   try {
-    const sandbox = await client.createSandbox({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     try {
       // Events arrive as they happen: one line per second, rather than three

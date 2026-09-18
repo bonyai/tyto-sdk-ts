@@ -1,17 +1,10 @@
 import * as grpc from "@grpc/grpc-js";
 
-import {
-  AuthenticationError,
-  InvalidRequestError,
-  SandboxDeletedError,
-  SandboxFailedError,
-  TimeoutError,
-} from "./errors.js";
+import { InvalidRequestError, TimeoutError } from "./errors.js";
 import { mapRpcError } from "./grpc-errors.js";
 import { validateResizeDimension } from "./session.js";
 import { Deadline } from "./transport.js";
-import { Exit, Status, Stdout } from "./types.js";
-import type { Sandbox } from "./sandbox.js";
+import { Exit, Stdout } from "./types.js";
 import {
   SessionStatus as ProtoSessionStatus,
   type AttachSessionRequest,
@@ -331,201 +324,7 @@ export interface AttachSessionOptions {
   maxReplayBytes?: number;
 }
 
-/**
- * Managed console session RPC surface: persistent, guest-owned command
- * sessions that outlive the client connection. Capability refresh:
- * UNAUTHENTICATED transparently calls ReissueCapability and retries once,
- * at admission time only; PERMISSION_DENIED never triggers a refresh.
- */
-export class SandboxSessions {
-  private readonly sandbox: Sandbox;
-
-  constructor(sandbox: Sandbox) {
-    this.sandbox = sandbox;
-  }
-
-  /**
-   * Creates a named TTY session. Create over an existing record raises
-   * SessionExistsError; `replace: true` replaces a terminal record only -- a
-   * running or attached session must be killed first.
-   */
-  async create(name: string, command: readonly string[], options: CreateSessionOptions = {}): Promise<SessionInfo> {
-    const validatedName = validateSessionName(name);
-    const argv = validateSessionCommand(command);
-    const env = validateSessionEnv(options.env);
-    const cwd = validateSessionCwd(options.cwd);
-    const cols = validateSessionDimension("cols", options.cols ?? 0);
-    const rows = validateSessionDimension("rows", options.rows ?? 0);
-    const replace = options.replace ?? false;
-
-    return this.withCapabilityRefresh(async () => {
-      const request = { name: validatedName, command: argv, env, workingDir: cwd, cols, rows, replace };
-      let response: { session?: ProtoSessionInfo };
-      try {
-        response = await unaryCall(this.stub().createSession, request, this.metadata(), this.timeout());
-      } catch (error) {
-        throw this.mapError(error);
-      }
-      return sessionInfoFromProto(response.session);
-    });
-  }
-
-  /**
-   * Lists sessions. Works on a suspended sandbox without waking it: the
-   * result's `sandboxSuspended` is true when served from the suspend-time
-   * snapshot rather than the live guest.
-   */
-  async list(): Promise<SessionList> {
-    return this.withCapabilityRefresh(async () => {
-      let response: { sessions?: ProtoSessionInfo[]; sandboxSuspended?: boolean };
-      try {
-        response = await unaryCall(this.stub().listSessions, {}, this.metadata(), this.timeout());
-      } catch (error) {
-        throw this.mapError(error);
-      }
-      return new SessionList((response.sessions ?? []).map(sessionInfoFromProto), Boolean(response.sandboxSuspended));
-    });
-  }
-
-  /** Signals (default TERM), then SIGKILL after grace_ms if still alive. */
-  async kill(name: string, options: { signal?: string; graceMs?: number } = {}): Promise<SessionInfo> {
-    const validatedName = validateSessionName(name);
-    const signal = options.signal ?? "TERM";
-    if (!signal) {
-      throw new InvalidRequestError("signal must be a non-empty string");
-    }
-    const graceMs = options.graceMs ?? 5000;
-    if (!Number.isInteger(graceMs) || graceMs < 0) {
-      throw new InvalidRequestError("grace_ms must be a non-negative integer");
-    }
-
-    return this.withCapabilityRefresh(async () => {
-      let response: { session?: ProtoSessionInfo };
-      try {
-        response = await unaryCall(
-          this.stub().killSession,
-          { name: validatedName, signal, graceMs },
-          this.metadata(),
-          this.timeout(),
-        );
-      } catch (error) {
-        throw this.mapError(error);
-      }
-      return sessionInfoFromProto(response.session);
-    });
-  }
-
-  /**
-   * Attaches to a session by name, replaying bounded output produced while
-   * detached. A second attach preempts an existing one -- the loser's
-   * stream ends with a TAKEOVER SessionEnded event.
-   */
-  async attach(name: string, options: AttachSessionOptions = {}): Promise<SessionStream> {
-    const validatedName = validateSessionName(name);
-    const cols = validateSessionDimension("cols", options.cols ?? 0);
-    const rows = validateSessionDimension("rows", options.rows ?? 0);
-    const maxReplayBytes = options.maxReplayBytes ?? 0;
-    if (!Number.isInteger(maxReplayBytes) || maxReplayBytes < 0) {
-      throw new InvalidRequestError("max_replay_bytes must be a non-negative integer");
-    }
-    this.ensureSessionsAllowed();
-
-    const openStream = () =>
-      SessionStream.open({
-        sandboxId: this.sandbox.id,
-        name: validatedName,
-        cols,
-        rows,
-        maxReplayBytes,
-        stub: this.stub(),
-        capability: this.sandbox._capability,
-        timeout: this.sandbox._client._timeout,
-        secrets: this.sandbox._client._secrets(this.sandbox._capability),
-      });
-
-    try {
-      return await openStream();
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        await this.sandbox.reissueCapability();
-        return openStream();
-      }
-      throw error;
-    }
-  }
-
-  private async withCapabilityRefresh<T>(call: () => Promise<T>): Promise<T> {
-    this.ensureSessionsAllowed();
-    try {
-      return await call();
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        await this.sandbox.reissueCapability();
-        return call();
-      }
-      throw error;
-    }
-  }
-
-  private ensureSessionsAllowed(): void {
-    const sandbox = this.sandbox;
-    if (sandbox._deleted || sandbox.lastObservedStatus === Status.DELETED) {
-      throw new SandboxDeletedError("sandbox has been deleted", { sandboxId: sandbox.id, operationId: sandbox.operationId });
-    }
-    if (sandbox.lastObservedStatus === Status.FAILED) {
-      const message = sandbox._failureMessage || sandbox._failureCode || "sandbox failed";
-      throw new SandboxFailedError(message, { sandboxId: sandbox.id, operationId: sandbox.operationId });
-    }
-  }
-
-  private stub() {
-    return this.sandbox._client._execStub(this.sandbox._execEndpoint);
-  }
-
-  private timeout(): Deadline {
-    return Deadline.start(this.sandbox._client._timeout);
-  }
-
-  private metadata(): grpc.Metadata {
-    const metadata = new grpc.Metadata();
-    metadata.add("bonya-sandbox-id", this.sandbox.id);
-    metadata.add("bonya-exec-capability", this.sandbox._capability);
-    return metadata;
-  }
-
-  private mapError(error: unknown): unknown {
-    return mapRpcError(error, {
-      secrets: this.sandbox._client._secrets(this.sandbox._capability),
-      sandboxId: this.sandbox.id,
-      operationId: this.sandbox.operationId,
-      sessionRpc: true,
-    });
-  }
-}
-
-function unaryCall<Req, Res>(
-  method: (
-    request: Req,
-    metadata: grpc.Metadata,
-    options: grpc.CallOptions,
-    callback: (error: grpc.ServiceError | null, response: Res) => void,
-  ) => grpc.ClientUnaryCall,
-  request: Req,
-  metadata: grpc.Metadata,
-  deadline: Deadline,
-): Promise<Res> {
-  return new Promise((resolve, reject) => {
-    method(request, metadata, { deadline: deadline.deadlineDate() }, (error, response) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve(response);
-    });
-  });
-}
-
-function validateSessionName(name: unknown): string {
+export function validateSessionName(name: unknown): string {
   if (typeof name !== "string" || !name) {
     throw new InvalidRequestError("session name must be a non-empty string");
   }
@@ -538,7 +337,7 @@ function validateSessionName(name: unknown): string {
   return name;
 }
 
-function validateSessionCommand(command: unknown): string[] {
+export function validateSessionCommand(command: unknown): string[] {
   if (typeof command === "string" || !Array.isArray(command)) {
     throw new InvalidRequestError("command must be a non-empty sequence of strings");
   }
@@ -549,7 +348,7 @@ function validateSessionCommand(command: unknown): string[] {
   return argv;
 }
 
-function validateSessionEnv(env: Record<string, string> | undefined): Record<string, string> {
+export function validateSessionEnv(env: Record<string, string> | undefined): Record<string, string> {
   if (env === undefined) {
     return {};
   }
@@ -566,7 +365,7 @@ function validateSessionEnv(env: Record<string, string> | undefined): Record<str
   return normalized;
 }
 
-function validateSessionCwd(cwd: string | undefined): string {
+export function validateSessionCwd(cwd: string | undefined): string {
   if (cwd === undefined) {
     return "";
   }
@@ -576,14 +375,14 @@ function validateSessionCwd(cwd: string | undefined): string {
   return cwd;
 }
 
-function validateSessionDimension(name: string, value: number): number {
+export function validateSessionDimension(name: string, value: number): number {
   if (!Number.isInteger(value) || value < 0 || value > 512) {
     throw new InvalidRequestError(`${name} must be a non-negative integer <= 512`);
   }
   return value;
 }
 
-function sessionInfoFromProto(info: ProtoSessionInfo | undefined): SessionInfo {
+export function sessionInfoFromProto(info: ProtoSessionInfo | undefined): SessionInfo {
   if (!info) {
     return {
       name: "",

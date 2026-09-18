@@ -9,8 +9,8 @@ describe("sandbox names", () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
 
-    const sandbox = await client.sandboxes.create({
-      template: "ubuntu-24.04",
+    const sandbox = await client.createSandbox({
+      template: "bonya-dev",
       wait: Wait.NONE,
       idempotencyKey: "idem-1",
       name: "my-box",
@@ -26,8 +26,8 @@ describe("sandbox names", () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
 
-    const sandbox = await client.sandboxes.create({
-      template: "ubuntu-24.04",
+    const sandbox = await client.createSandbox({
+      template: "bonya-dev",
       wait: Wait.NONE,
       idempotencyKey: "idem-1",
     });
@@ -44,7 +44,7 @@ describe("sandbox names", () => {
     const client = makeClient(transport);
 
     const summaries = [];
-    for await (const summary of client.sandboxes.list({ name: "my-box" })) {
+    for await (const summary of client.listSandboxes({ name: "my-box" })) {
       summaries.push(summary);
     }
 
@@ -59,7 +59,7 @@ describe("sandbox names", () => {
     ];
     const client = makeClient(transport);
 
-    const sandbox = await client.sandboxes.getByName("my-box");
+    const sandbox = await client.getSandboxByName("my-box");
 
     expect(sandbox.id).toBe("sbx-1");
     // The name is only used to find the id; the fetch itself is by id.
@@ -71,7 +71,7 @@ describe("sandbox names", () => {
     transport.tapi.listPages = [{ sandboxes: [], nextPageToken: "" }];
     const client = makeClient(transport);
 
-    await expect(client.sandboxes.getByName("absent")).rejects.toBeInstanceOf(SandboxNotFoundError);
+    await expect(client.getSandboxByName("absent")).rejects.toBeInstanceOf(SandboxNotFoundError);
   });
 
   // Names are not unique, and silently picking one would let a later delete
@@ -86,13 +86,13 @@ describe("sandbox names", () => {
     ];
     const client = makeClient(transport);
 
-    await expect(client.sandboxes.getByName("shared")).rejects.toBeInstanceOf(InvalidRequestError);
+    await expect(client.getSandboxByName("shared")).rejects.toBeInstanceOf(InvalidRequestError);
     expect(transport.tapi.getRequests).toEqual([]);
   });
 
   it("requires a name", async () => {
     const client = makeClient(makeFakeTransport());
 
-    await expect(client.sandboxes.getByName("")).rejects.toBeInstanceOf(InvalidRequestError);
+    await expect(client.getSandboxByName("")).rejects.toBeInstanceOf(InvalidRequestError);
   });
 });

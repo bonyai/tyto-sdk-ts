@@ -32,7 +32,7 @@ describe("Tyto configuration", () => {
     process.env["BONYA_ENDPOINT"] = "https://env.example.test";
     const transport = makeFakeTransport();
     const client = new Tyto({ _channelFactory: transport.channelFactory, _tapiStubFactory: transport.tapiStubFactory });
-    expect(client.sandboxes).toBeDefined();
+    expect(client).toBeDefined();
     client.close();
   });
 
@@ -78,13 +78,13 @@ describe("Tyto configuration", () => {
   });
 });
 
-describe("SandboxCollection.create", () => {
+describe("Tyto.createSandbox", () => {
   it("maps the response, retries on UNAVAILABLE with the same request, and pools channels", async () => {
     const transport = makeFakeTransport();
     transport.tapi.createErrors.push(new RpcFailure(grpc.status.UNAVAILABLE, "try again"));
     const client = makeClient(transport);
 
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04", wait: Wait.NONE, idempotencyKey: "idem-1" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev", wait: Wait.NONE, idempotencyKey: "idem-1" });
 
     expect(sandbox.id).toBe("sbx-1");
     expect(sandbox.lastObservedStatus).toBe(Status.CREATING);
@@ -93,7 +93,7 @@ describe("SandboxCollection.create", () => {
     const request = transport.tapi.createRequests[0] as any;
     expect(request.apiKey).toBe("secret-api");
     expect(request.idempotencyKey).toBe("idem-1");
-    expect(request.template.templateId).toBe("ubuntu-24.04");
+    expect(request.template.templateId).toBe("bonya-dev");
 
     const result = await sandbox.exec("printf ready");
     expect(result.stdout).toBe("ready");
@@ -106,12 +106,6 @@ describe("SandboxCollection.create", () => {
     expect(transport.channels.every((c) => c.closed)).toBe(true);
   });
 
-  it("requires a non-empty template", async () => {
-    const transport = makeFakeTransport();
-    const client = makeClient(transport);
-    await expect(client.sandboxes.create({ template: "" })).rejects.toThrow(InvalidRequestError);
-  });
-
   it("rejects a response missing exec_endpoint", async () => {
     const transport = makeFakeTransport();
     transport.tapi.create = (request, _metadata, callback) => {
@@ -120,19 +114,19 @@ describe("SandboxCollection.create", () => {
       return new EventEmitter() as unknown as grpc.ClientUnaryCall;
     };
     const client = makeClient(transport);
-    await expect(client.sandboxes.create({ template: "ubuntu-24.04", idempotencyKey: "idem" })).rejects.toThrow(
+    await expect(client.createSandbox({ template: "bonya-dev", idempotencyKey: "idem" })).rejects.toThrow(
       InvalidRequestError,
     );
   });
 });
 
-describe("SandboxCollection.get", () => {
+describe("Tyto.getSandbox", () => {
   it("returns a usable sandbox without resuming", async () => {
     const transport = makeFakeTransport();
     transport.tapi.sourceStatuses["sbx-1"] = Status.SUSPENDED;
     const client = makeClient(transport);
 
-    const sandbox = await client.sandboxes.get("sbx-1");
+    const sandbox = await client.getSandbox("sbx-1");
 
     expect(sandbox.id).toBe("sbx-1");
     expect(sandbox.lastObservedStatus).toBe(Status.SUSPENDED);
@@ -151,14 +145,14 @@ describe("SandboxCollection.get", () => {
     const client = makeClient(transport);
 
     for (const id of ["missing", "deleted", "cross-tenant"]) {
-      await expect(client.sandboxes.get(id)).rejects.toThrow(SandboxNotFoundError);
+      await expect(client.getSandbox(id)).rejects.toThrow(SandboxNotFoundError);
     }
   });
 
   it("requires a non-empty sandbox id", async () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
-    await expect(client.sandboxes.get("")).rejects.toThrow(InvalidRequestError);
+    await expect(client.getSandbox("")).rejects.toThrow(InvalidRequestError);
   });
 
   it("retries GetSandbox on UNAVAILABLE", async () => {
@@ -166,33 +160,33 @@ describe("SandboxCollection.get", () => {
     transport.tapi.getErrors.push(new RpcFailure(grpc.status.UNAVAILABLE, "try again"));
     const client = makeClient(transport);
 
-    const sandbox = await client.sandboxes.get("sbx-1");
+    const sandbox = await client.getSandbox("sbx-1");
     expect(sandbox.id).toBe("sbx-1");
     expect(transport.tapi.getRequests).toHaveLength(2);
   });
 });
 
-describe("SandboxCollection.list", () => {
+describe("Tyto.listSandboxes", () => {
   it("is lazy, paginates, and honors a total limit", async () => {
     const transport = makeFakeTransport();
     transport.tapi.listPages = [
       {
         sandboxes: [
-          { sandboxId: "sbx-3", operationId: "op-sbx-3", resolvedTemplateId: "ubuntu-24.04", resolvedTemplateVersion: "dev", observed: { state: 5, code: "", message: "" } },
-          { sandboxId: "sbx-2", operationId: "op-sbx-2", resolvedTemplateId: "ubuntu-24.04", resolvedTemplateVersion: "dev", observed: { state: 7, code: "", message: "" } },
+          { sandboxId: "sbx-3", operationId: "op-sbx-3", resolvedTemplateId: "bonya-dev", resolvedTemplateVersion: "dev", observed: { state: 5, code: "", message: "" } },
+          { sandboxId: "sbx-2", operationId: "op-sbx-2", resolvedTemplateId: "bonya-dev", resolvedTemplateVersion: "dev", observed: { state: 7, code: "", message: "" } },
         ],
         nextPageToken: "secret-token",
       },
       {
         sandboxes: [
-          { sandboxId: "sbx-1", operationId: "op-sbx-1", resolvedTemplateId: "ubuntu-24.04", resolvedTemplateVersion: "dev", observed: { state: 2, code: "create_failed", message: "disk full" } },
+          { sandboxId: "sbx-1", operationId: "op-sbx-1", resolvedTemplateId: "bonya-dev", resolvedTemplateVersion: "dev", observed: { state: 2, code: "create_failed", message: "disk full" } },
         ],
         nextPageToken: "",
       },
     ];
     const client = makeClient(transport);
 
-    const iterator = client.sandboxes.list({ limit: 3 });
+    const iterator = client.listSandboxes({ limit: 3 });
     expect(transport.tapi.listRequests).toHaveLength(0);
 
     const summaries = [];
@@ -216,7 +210,7 @@ describe("SandboxCollection.list", () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
     const results = [];
-    for await (const summary of client.sandboxes.list({ limit: 0 })) {
+    for await (const summary of client.listSandboxes({ limit: 0 })) {
       results.push(summary);
     }
     expect(results).toHaveLength(0);
@@ -226,8 +220,8 @@ describe("SandboxCollection.list", () => {
   it("rejects Status.DELETED as a filter and a negative limit", () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
-    expect(() => client.sandboxes.list({ states: [Status.DELETED] })).toThrow(InvalidRequestError);
-    expect(() => client.sandboxes.list({ limit: -1 })).toThrow(InvalidRequestError);
+    expect(() => client.listSandboxes({ states: [Status.DELETED] })).toThrow(InvalidRequestError);
+    expect(() => client.listSandboxes({ limit: -1 })).toThrow(InvalidRequestError);
   });
 });
 
@@ -236,7 +230,7 @@ describe("exec never retries and redacts the capability", () => {
     const transport = makeFakeTransport();
     transport.guest.fail = true;
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     await expect(sandbox.exec(["false"])).rejects.toThrow();
     expect(transport.guest.calls).toBe(1);

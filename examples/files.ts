@@ -11,32 +11,30 @@ async function main(): Promise<void> {
   const client = new Tyto({ apiKey });
 
   try {
-    const sandbox = await client.createSandbox({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     try {
-      const files = sandbox.files;
-
-      await files.write("/workspace/greeting.txt", "hello\n");
-      const data = await files.read("/workspace/greeting.txt");
+      await sandbox.writeFile("/workspace/greeting.txt", "hello\n");
+      const data = await sandbox.readFile("/workspace/greeting.txt");
       process.stdout.write(new TextDecoder().decode(data));
 
-      await files.mkdir("/workspace/output");
-      await files.move("/workspace/greeting.txt", "/workspace/output/greeting.txt");
+      await sandbox.mkdirFile("/workspace/output");
+      await sandbox.moveFile("/workspace/greeting.txt", "/workspace/output/greeting.txt");
 
-      for (const entry of await files.list("/workspace/output")) {
+      for (const entry of await sandbox.listFiles("/workspace/output")) {
         const kind = entry.kind === FileKind.DIRECTORY ? "dir " : "file";
         console.log(`${kind} ${entry.name} (${entry.size} bytes)`);
       }
 
-      const info = await files.stat("/workspace/output/greeting.txt");
+      const info = await sandbox.statFile("/workspace/output/greeting.txt");
       console.log(`mode ${(info.mode & 0o7777).toString(8).padStart(4, "0")}, modified ${info.modifiedAt}`);
 
-      // upload and download stream in chunks, so file size is bounded by disk
-      // rather than memory. read buffers, capped by filesystemReadLimit.
-      await files.upload("package.json", "/workspace/output/package.json");
-      await files.download("/workspace/output/package.json", "/tmp/roundtrip.json");
+      // uploadFile and downloadFile stream in chunks, so file size is bounded
+      // by disk rather than memory. readFile buffers, capped by filesystemReadLimit.
+      await sandbox.uploadFile("package.json", "/workspace/output/package.json");
+      await sandbox.downloadFile("/workspace/output/package.json", "/tmp/roundtrip.json");
 
-      await files.remove("/workspace/output", true);
+      await sandbox.removeFile("/workspace/output", true);
     } finally {
       await sandbox.delete();
     }

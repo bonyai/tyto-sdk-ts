@@ -1,23 +1,60 @@
 import * as grpc from "@grpc/grpc-js";
+import * as fs from "node:fs";
+import * as fsPromises from "node:fs/promises";
+import * as nodePath from "node:path";
+import { randomUUID } from "node:crypto";
 
 import type { Tyto } from "./client.js";
 import { callUnary } from "./client.js";
 import {
+  AuthenticationError,
   CapabilityRejectedError,
   ExecFailedError,
+  FilesystemLimitError,
   InvalidRequestError,
   SandboxDeletedError,
   SandboxFailedError,
   SandboxSuspendedError,
 } from "./errors.js";
 import { isRetryableTransportError, isGrpcServiceError, mapRpcError } from "./grpc-errors.js";
-import { SandboxFiles } from "./files.js";
-import { SandboxPreviews } from "./previews.js";
-import { SandboxSessions } from "./sessions.js";
+import { FileKind as ProtoFileKind, type FileInfo as ProtoFileInfo } from "./proto/tyto/runtime/v1/guest.js";
+import { FileInfo, FileKind, TRANSFER_CHUNK_BYTES } from "./files.js";
+import {
+  previewFromInfo,
+  PreviewAuth,
+  type CreatePreviewOptions,
+  type Preview,
+} from "./previews.js";
+import { PreviewAuthMode } from "./proto/tyto/runtime/v1/preview.js";
+import type { PreviewInfo as ProtoPreviewInfo } from "./proto/tyto/runtime/v1/tapi.js";
+import {
+  SessionStream,
+  SessionList,
+  validateSessionCommand,
+  validateSessionCwd,
+  validateSessionDimension,
+  validateSessionEnv,
+  validateSessionName,
+  sessionInfoFromProto,
+  type AttachSessionOptions,
+  type CreateSessionOptions,
+  type SessionInfo as SessionInfoResult,
+} from "./sessions.js";
+import type { SessionInfo as ProtoSessionInfo } from "./proto/tyto/runtime/v1/guest.js";
 import { ExecSession } from "./session.js";
 import { Deadline, sleepWithDeadline } from "./transport.js";
 import { Exit, ExecEvent, Status, Stderr, Stdout } from "./types.js";
 import * as grpcStatus from "@grpc/grpc-js";
+
+const MIN_PREVIEW_PORT = 1024;
+const MAX_PREVIEW_PORT = 65535;
+const MAX_PREVIEW_NAME_BYTES = 80;
+const TOKEN_QUERY_PARAM = "bonya_token";
+
+const PREVIEW_AUTH_TO_PROTO: Record<PreviewAuth, PreviewAuthMode> = {
+  [PreviewAuth.TOKEN]: PreviewAuthMode.PREVIEW_AUTH_MODE_TOKEN,
+  [PreviewAuth.PUBLIC]: PreviewAuthMode.PREVIEW_AUTH_MODE_PUBLIC,
+};
 
 export interface DeleteResult {
   readonly sandboxId: string;
@@ -173,10 +210,6 @@ export class Sandbox {
   /** @internal */ _failureMessage: string | undefined;
   /** @internal */ _deleted = false;
 
-  readonly files: SandboxFiles;
-  readonly sessions: SandboxSessions;
-  readonly previews: SandboxPreviews;
-
   constructor(options: SandboxOptions) {
     this._client = options.client;
     this.id = options.sandboxId;
@@ -189,9 +222,6 @@ export class Sandbox {
     this._capability = options.capability;
     this._failureCode = options.failureCode;
     this._failureMessage = options.failureMessage;
-    this.files = new SandboxFiles(this);
-    this.sessions = new SandboxSessions(this);
-    this.previews = new SandboxPreviews(this);
   }
 
   /**
@@ -232,7 +262,7 @@ export class Sandbox {
    * Deletes this sandbox. Idempotent: calling it again on the same handle
    * is local and returns alreadyDeleted: true without another RPC.
    *
-   * The RPC itself is client.sandboxes.delete(); this adds the local
+   * The RPC itself is client.deleteSandbox(); this adds the local
    * already-deleted short-circuit and updates the handle's own status,
    * which only make sense with a handle to check and update.
    */
@@ -240,7 +270,7 @@ export class Sandbox {
     if (this._deleted) {
       return { sandboxId: this.id, alreadyDeleted: true };
     }
-    const result = await this._client.sandboxes.delete(this.id);
+    const result = await this._client.deleteSandbox(this.id);
     this._deleted = true;
     this.lastObservedStatus = Status.DELETED;
     return result;
@@ -308,7 +338,7 @@ export class Sandbox {
   /**
    * Explicitly resumes a suspended sandbox before running work.
    *
-   * The RPC itself is client.sandboxes.resumeRaw(); this additionally
+   * The RPC itself is client._resumeSandboxRaw(); this additionally
    * copies the refreshed capability and exec endpoint onto the handle,
    * which only makes sense with a handle to update, and checks for a
    * locally known failed status before making a request the server would
@@ -321,7 +351,7 @@ export class Sandbox {
         operationId: this.operationId,
       });
     }
-    const [result, response] = await this._client.sandboxes.resumeRaw(this.id, options);
+    const [result, response] = await this._client._resumeSandboxRaw(this.id, options);
     if (response.execCapabilityJws) {
       this._capability = response.execCapabilityJws;
     }
@@ -330,6 +360,551 @@ export class Sandbox {
     }
     this.lastObservedStatus = Status.RUNNING;
     return result;
+  }
+
+  /**
+   * Creates a named TTY session: a persistent, guest-owned command session
+   * that outlives the client connection. Create over an existing record
+   * raises SessionExistsError; `replace: true` replaces a terminal record
+   * only -- a running or attached session must be killed first.
+   *
+   * Capability refresh: an UNAUTHENTICATED rejection (an expired token)
+   * transparently calls reissueCapability() and retries exactly once, at
+   * admission time only, never mid-stream. PERMISSION_DENIED never triggers
+   * a refresh.
+   */
+  async createSession(
+    name: string,
+    command: readonly string[],
+    options: CreateSessionOptions = {},
+  ): Promise<SessionInfoResult> {
+    const validatedName = validateSessionName(name);
+    const argv = validateSessionCommand(command);
+    const env = validateSessionEnv(options.env);
+    const cwd = validateSessionCwd(options.cwd);
+    const cols = validateSessionDimension("cols", options.cols ?? 0);
+    const rows = validateSessionDimension("rows", options.rows ?? 0);
+    const replace = options.replace ?? false;
+
+    return this.withSessionCapabilityRefresh(async () => {
+      const request = { name: validatedName, command: argv, env, workingDir: cwd, cols, rows, replace };
+      let response: { session?: ProtoSessionInfo };
+      try {
+        response = await callUnaryWithOptions(this.sessionStub().createSession, request, this.sessionMetadata(), this.sessionTimeout());
+      } catch (error) {
+        throw this.mapSessionError(error);
+      }
+      return sessionInfoFromProto(response.session);
+    });
+  }
+
+  /**
+   * Lists sessions. Works on a suspended sandbox without waking it: the
+   * result's `sandboxSuspended` is true when served from the suspend-time
+   * snapshot rather than the live guest.
+   */
+  async listSessions(): Promise<SessionList> {
+    return this.withSessionCapabilityRefresh(async () => {
+      let response: { sessions?: ProtoSessionInfo[]; sandboxSuspended?: boolean };
+      try {
+        response = await callUnaryWithOptions(this.sessionStub().listSessions, {}, this.sessionMetadata(), this.sessionTimeout());
+      } catch (error) {
+        throw this.mapSessionError(error);
+      }
+      return new SessionList((response.sessions ?? []).map(sessionInfoFromProto), Boolean(response.sandboxSuspended));
+    });
+  }
+
+  /** Signals (default TERM), then SIGKILL after grace_ms if still alive. */
+  async killSession(name: string, options: { signal?: string; graceMs?: number } = {}): Promise<SessionInfoResult> {
+    const validatedName = validateSessionName(name);
+    const signal = options.signal ?? "TERM";
+    if (!signal) {
+      throw new InvalidRequestError("signal must be a non-empty string");
+    }
+    const graceMs = options.graceMs ?? 5000;
+    if (!Number.isInteger(graceMs) || graceMs < 0) {
+      throw new InvalidRequestError("grace_ms must be a non-negative integer");
+    }
+
+    return this.withSessionCapabilityRefresh(async () => {
+      let response: { session?: ProtoSessionInfo };
+      try {
+        response = await callUnaryWithOptions(
+          this.sessionStub().killSession,
+          { name: validatedName, signal, graceMs },
+          this.sessionMetadata(),
+          this.sessionTimeout(),
+        );
+      } catch (error) {
+        throw this.mapSessionError(error);
+      }
+      return sessionInfoFromProto(response.session);
+    });
+  }
+
+  /**
+   * Attaches to a session by name, replaying bounded output produced while
+   * detached. A second attach preempts an existing one -- the loser's
+   * stream ends with a TAKEOVER SessionEnded event.
+   */
+  async attachSession(name: string, options: AttachSessionOptions = {}): Promise<SessionStream> {
+    const validatedName = validateSessionName(name);
+    const cols = validateSessionDimension("cols", options.cols ?? 0);
+    const rows = validateSessionDimension("rows", options.rows ?? 0);
+    const maxReplayBytes = options.maxReplayBytes ?? 0;
+    if (!Number.isInteger(maxReplayBytes) || maxReplayBytes < 0) {
+      throw new InvalidRequestError("max_replay_bytes must be a non-negative integer");
+    }
+    this.ensureSessionsAllowed();
+
+    const openStream = () =>
+      SessionStream.open({
+        sandboxId: this.id,
+        name: validatedName,
+        cols,
+        rows,
+        maxReplayBytes,
+        stub: this.sessionStub(),
+        capability: this._capability,
+        timeout: this._client._timeout,
+        secrets: this._client._secrets(this._capability),
+      });
+
+    try {
+      return await openStream();
+    } catch (error) {
+      if (error instanceof AuthenticationError) {
+        await this.reissueCapability();
+        return openStream();
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Publishes a preview URL for a guest port. These are TApi calls
+   * authenticated with the API key, not data-plane calls, so the
+   * capability-refresh wrapper that guards exec and files does not apply
+   * here -- there is no capability in play on the request.
+   *
+   * On success the sandbox's stored capability is replaced with the one
+   * returned, because the preview scope is newer than the token a sandbox
+   * was created with.
+   */
+  async createPreview(port: number, options: CreatePreviewOptions = {}): Promise<Preview> {
+    if (!Number.isInteger(port)) {
+      throw new InvalidRequestError("port must be an integer", { sandboxId: this.id });
+    }
+    if (port < MIN_PREVIEW_PORT || port > MAX_PREVIEW_PORT) {
+      throw new InvalidRequestError(`port must be between ${MIN_PREVIEW_PORT} and ${MAX_PREVIEW_PORT}`, {
+        sandboxId: this.id,
+      });
+    }
+    const auth = options.auth ?? PreviewAuth.TOKEN;
+    if (!(auth in PREVIEW_AUTH_TO_PROTO)) {
+      throw new InvalidRequestError("auth must be a PreviewAuth", { sandboxId: this.id });
+    }
+    const displayName = options.name ?? "";
+    if (Buffer.byteLength(displayName, "utf-8") > MAX_PREVIEW_NAME_BYTES) {
+      throw new InvalidRequestError(`name exceeds ${MAX_PREVIEW_NAME_BYTES} bytes`, { sandboxId: this.id });
+    }
+    const key = options.idempotencyKey ?? randomUUID();
+    if (!key) {
+      throw new InvalidRequestError("idempotency key must be non-empty", { sandboxId: this.id });
+    }
+
+    const request = {
+      apiKey: this._client._apiKey,
+      sandboxId: this.id,
+      port,
+      authMode: PREVIEW_AUTH_TO_PROTO[auth],
+      name: displayName,
+      idempotencyKey: key,
+    };
+    const deadline = Deadline.start(this._client._timeout);
+    let response: { preview?: ProtoPreviewInfo; capabilityJws?: string };
+    try {
+      response = (await callUnary(this._client._tapiStub().createPreview, request, new grpc.Metadata(), deadline)) as {
+        preview?: ProtoPreviewInfo;
+        capabilityJws?: string;
+      };
+    } catch (error) {
+      throw mapRpcError(error, { secrets: this._client._secrets(this._capability), sandboxId: this.id });
+    }
+
+    if (response.capabilityJws) {
+      this._capability = response.capabilityJws;
+    }
+    if (!response.preview?.record?.previewId) {
+      throw new InvalidRequestError("CreatePreview response is missing the preview identity", {
+        sandboxId: this.id,
+        idempotencyKey: key,
+      });
+    }
+    return previewFromInfo(response.preview);
+  }
+
+  /** Every published preview for this sandbox. */
+  async listPreviews(): Promise<Preview[]> {
+    const request = { apiKey: this._client._apiKey, sandboxId: this.id };
+    const deadline = Deadline.start(this._client._timeout);
+    let response: { previews?: ProtoPreviewInfo[] };
+    try {
+      response = (await callUnary(this._client._tapiStub().listPreviews, request, new grpc.Metadata(), deadline)) as {
+        previews?: ProtoPreviewInfo[];
+      };
+    } catch (error) {
+      throw mapRpcError(error, { secrets: this._client._secrets(this._capability), sandboxId: this.id });
+    }
+    return (response.previews ?? []).map(previewFromInfo);
+  }
+
+  /** Revokes a preview URL. */
+  async deletePreview(previewId: string): Promise<void> {
+    if (!previewId) {
+      throw new InvalidRequestError("preview id is required", { sandboxId: this.id });
+    }
+    const request = { apiKey: this._client._apiKey, sandboxId: this.id, previewId };
+    const deadline = Deadline.start(this._client._timeout);
+    try {
+      await callUnary(this._client._tapiStub().deletePreview, request, new grpc.Metadata(), deadline);
+    } catch (error) {
+      throw mapRpcError(error, { secrets: this._client._secrets(this._capability), sandboxId: this.id });
+    }
+  }
+
+  /**
+   * A one-time URL that logs a browser into a token-mode preview. Raises on
+   * a public preview, which has no token to exchange and whose plain `url`
+   * already works. Never share this URL: anyone who receives it holds the
+   * sandbox's data-plane capability until it expires.
+   */
+  previewBrowserUrl(preview: Preview): string {
+    if (preview.auth === PreviewAuth.PUBLIC) {
+      throw new InvalidRequestError("a public preview needs no token; use preview.url", { sandboxId: this.id });
+    }
+    const capability = this._capability;
+    if (!capability) {
+      throw new InvalidRequestError("no capability is available for this sandbox", { sandboxId: this.id });
+    }
+    const separator = preview.url.includes("?") ? "&" : "?";
+    return `${preview.url}${separator}${TOKEN_QUERY_PARAM}=${capability}`;
+  }
+
+  /**
+   * Buffers an entire remote file and returns its bytes. Rejects with
+   * FilesystemLimitError before exceeding the client's memory cap.
+   */
+  async readFile(rawPath: string): Promise<Uint8Array> {
+    const remotePath = validateRemotePath(rawPath);
+    return this.withFileCapabilityRefresh(async () => {
+      const stream = this.fileStub().readFile({ sandboxId: this.id, path: remotePath }, this.fileMetadata(), {
+        deadline: Deadline.start(this._client._timeout).deadlineDate(),
+      });
+      const chunks: Buffer[] = [];
+      let total = 0;
+      try {
+        for await (const response of stream as AsyncIterable<{ data: Buffer }>) {
+          const chunk = response.data ?? Buffer.alloc(0);
+          total += chunk.length;
+          if (total > this._client._filesystemReadLimit) {
+            stream.cancel();
+            throw new FilesystemLimitError("filesystem read exceeded client memory limit", {
+              sandboxId: this.id,
+              operationId: this.operationId,
+            });
+          }
+          chunks.push(chunk);
+        }
+      } catch (error) {
+        if (error instanceof FilesystemLimitError) {
+          throw error;
+        }
+        throw this.mapFileError(error);
+      }
+      return new Uint8Array(Buffer.concat(chunks));
+    });
+  }
+
+  /**
+   * Writes data to a remote path, streamed in 64 KiB chunks through a
+   * guest-side temporary file and published atomically.
+   */
+  async writeFile(rawPath: string, data: Uint8Array | string): Promise<void> {
+    const remotePath = validateRemotePath(rawPath);
+    const payload = normalizeWriteData(data);
+    await this.writeFileStream(() => fileWriteFrames(this.id, remotePath, payload));
+  }
+
+  /** Streams a local file to the remote path in 64 KiB chunks. */
+  async uploadFile(localPath: string, remotePath: string): Promise<void> {
+    const validatedRemote = validateRemotePath(remotePath);
+    const source = await fsPromises.readFile(localPath);
+    await this.writeFileStream(() => fileWriteFrames(this.id, validatedRemote, source));
+  }
+
+  /**
+   * Streams a remote file into a hidden temporary file in the destination
+   * directory, fsyncs it, and atomically replaces the destination.
+   */
+  async downloadFile(remotePath: string, localPath: string): Promise<void> {
+    const validatedRemote = validateRemotePath(remotePath);
+    const destination = nodePath.resolve(localPath);
+    const parent = nodePath.dirname(destination);
+    const temp = nodePath.join(parent, `.${nodePath.basename(destination)}.bonya-download-${randomUUID()}.tmp`);
+    let replaced = false;
+    try {
+      const handle = await fsPromises.open(temp, "wx");
+      try {
+        await this.downloadFileToHandle(validatedRemote, handle);
+        await handle.sync();
+      } finally {
+        await handle.close();
+      }
+      await fsPromises.rename(temp, destination);
+      replaced = true;
+      await fsyncParentDir(parent);
+    } finally {
+      if (!replaced) {
+        await fsPromises.unlink(temp).catch(() => undefined);
+      }
+    }
+  }
+
+  /** Returns immediate children of a remote directory, sorted by name. */
+  async listFiles(rawPath: string): Promise<FileInfo[]> {
+    const remotePath = validateRemotePath(rawPath);
+    return this.withFileCapabilityRefresh(async () => {
+      const stream = this.fileStub().listDirectory({ sandboxId: this.id, path: remotePath }, this.fileMetadata(), {
+        deadline: Deadline.start(this._client._timeout).deadlineDate(),
+      });
+      const files: FileInfo[] = [];
+      try {
+        for await (const response of stream as AsyncIterable<{ file?: ProtoFileInfo }>) {
+          if (!response.file) {
+            throw new InvalidRequestError("ListDirectory response is missing file metadata");
+          }
+          files.push(fileInfoFromProto(response.file));
+        }
+      } catch (error) {
+        throw this.mapFileError(error);
+      }
+      return files.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    });
+  }
+
+  /** Returns lstat-style metadata for a remote path. */
+  async statFile(rawPath: string): Promise<FileInfo> {
+    const remotePath = validateRemotePath(rawPath);
+    return this.withFileCapabilityRefresh(async () => {
+      let response: { file?: ProtoFileInfo };
+      try {
+        response = await callUnaryWithOptions(
+          this.fileStub().statFile,
+          { sandboxId: this.id, path: remotePath },
+          this.fileMetadata(),
+          Deadline.start(this._client._timeout),
+        );
+      } catch (error) {
+        throw this.mapFileError(error);
+      }
+      if (!response.file) {
+        throw new InvalidRequestError("StatFile response is missing file metadata");
+      }
+      return fileInfoFromProto(response.file);
+    });
+  }
+
+  /** Creates a remote directory. */
+  async mkdirFile(rawPath: string): Promise<void> {
+    const remotePath = validateRemotePath(rawPath);
+    await this.unaryFileMutation("makeDirectory", { sandboxId: this.id, path: remotePath });
+  }
+
+  /** Removes a remote path, recursively if recursive is true. */
+  async removeFile(rawPath: string, recursive = false): Promise<void> {
+    const remotePath = validateRemotePath(rawPath);
+    await this.unaryFileMutation("removeFile", { sandboxId: this.id, path: remotePath, recursive });
+  }
+
+  /** Moves a remote file or directory. Same-filesystem, atomic, and no-overwrite. */
+  async moveFile(source: string, destination: string): Promise<void> {
+    const sourcePath = validateRemotePath(source);
+    const destinationPath = validateRemotePath(destination);
+    await this.unaryFileMutation("moveFile", { sandboxId: this.id, sourcePath, destinationPath });
+  }
+
+  private async writeFileStream(framesFactory: () => Array<{ start?: unknown; chunk?: unknown }>): Promise<void> {
+    await this.withFileCapabilityRefresh(async () => {
+      await new Promise<void>((resolve, reject) => {
+        const call = this.fileStub().writeFile(
+          this.fileMetadata(),
+          { deadline: Deadline.start(this._client._timeout).deadlineDate() },
+          (error) => {
+            if (error) {
+              reject(this.mapFileError(error));
+              return;
+            }
+            resolve();
+          },
+        );
+        for (const frame of framesFactory()) {
+          call.write(frame as never);
+        }
+        call.end();
+      });
+    });
+  }
+
+  private async downloadFileToHandle(remotePath: string, handle: fsPromises.FileHandle): Promise<void> {
+    await this.withFileCapabilityRefresh(async () => {
+      const stream = this.fileStub().readFile({ sandboxId: this.id, path: remotePath }, this.fileMetadata(), {
+        deadline: Deadline.start(this._client._timeout).deadlineDate(),
+      });
+      try {
+        for await (const response of stream as AsyncIterable<{ data: Buffer }>) {
+          await handle.write(response.data ?? Buffer.alloc(0));
+        }
+      } catch (error) {
+        throw this.mapFileError(error);
+      }
+    });
+  }
+
+  private async unaryFileMutation(
+    methodName: "makeDirectory" | "removeFile" | "moveFile",
+    request: Record<string, unknown>,
+  ): Promise<void> {
+    await this.withFileCapabilityRefresh(async () => {
+      const stub = this.fileStub() as unknown as Record<
+        string,
+        (
+          request: unknown,
+          metadata: grpc.Metadata,
+          options: grpc.CallOptions,
+          callback: (error: grpc.ServiceError | null, response: unknown) => void,
+        ) => grpc.ClientUnaryCall
+      >;
+      const method = stub[methodName];
+      if (!method) {
+        throw new InvalidRequestError(`unknown filesystem method ${methodName}`);
+      }
+      try {
+        await new Promise<void>((resolve, reject) => {
+          method.call(
+            stub,
+            request,
+            this.fileMetadata(),
+            { deadline: Deadline.start(this._client._timeout).deadlineDate() },
+            (error) => {
+              if (error) {
+                reject(error);
+                return;
+              }
+              resolve();
+            },
+          );
+        });
+      } catch (error) {
+        throw this.mapFileError(error);
+      }
+    });
+  }
+
+  private async withFileCapabilityRefresh<T>(call: () => Promise<T>): Promise<T> {
+    this.ensureFilesAllowed();
+    try {
+      return await call();
+    } catch (error) {
+      if (error instanceof CapabilityRejectedError) {
+        await this._refreshCapabilityOnce();
+        return call();
+      }
+      throw error;
+    }
+  }
+
+  private ensureFilesAllowed(): void {
+    if (this._deleted || this.lastObservedStatus === Status.DELETED) {
+      throw new SandboxDeletedError("sandbox has been deleted", { sandboxId: this.id, operationId: this.operationId });
+    }
+    if (this.lastObservedStatus === Status.FAILED) {
+      const message = this._failureMessage || this._failureCode || "sandbox failed";
+      throw new SandboxFailedError(message, { sandboxId: this.id, operationId: this.operationId });
+    }
+  }
+
+  private fileStub() {
+    return this._client._execStub(this._execEndpoint);
+  }
+
+  private fileMetadata(): grpc.Metadata {
+    const metadata = new grpc.Metadata();
+    metadata.add("bonya-sandbox-id", this.id);
+    metadata.add("bonya-exec-capability", this._capability);
+    return metadata;
+  }
+
+  private mapFileError(error: unknown): unknown {
+    const mapped = mapRpcError(error, {
+      secrets: this._client._secrets(this._capability),
+      sandboxId: this.id,
+      operationId: this.operationId,
+      filesystemRpc: true,
+    });
+    if (mapped instanceof SandboxDeletedError) {
+      this._deleted = true;
+      this.lastObservedStatus = Status.DELETED;
+    }
+    return mapped;
+  }
+
+  private async withSessionCapabilityRefresh<T>(call: () => Promise<T>): Promise<T> {
+    this.ensureSessionsAllowed();
+    try {
+      return await call();
+    } catch (error) {
+      if (error instanceof AuthenticationError) {
+        await this.reissueCapability();
+        return call();
+      }
+      throw error;
+    }
+  }
+
+  private ensureSessionsAllowed(): void {
+    if (this._deleted || this.lastObservedStatus === Status.DELETED) {
+      throw new SandboxDeletedError("sandbox has been deleted", { sandboxId: this.id, operationId: this.operationId });
+    }
+    if (this.lastObservedStatus === Status.FAILED) {
+      const message = this._failureMessage || this._failureCode || "sandbox failed";
+      throw new SandboxFailedError(message, { sandboxId: this.id, operationId: this.operationId });
+    }
+  }
+
+  private sessionStub() {
+    return this._client._execStub(this._execEndpoint);
+  }
+
+  private sessionTimeout(): Deadline {
+    return Deadline.start(this._client._timeout);
+  }
+
+  private sessionMetadata(): grpc.Metadata {
+    const metadata = new grpc.Metadata();
+    metadata.add("bonya-sandbox-id", this.id);
+    metadata.add("bonya-exec-capability", this._capability);
+    return metadata;
+  }
+
+  private mapSessionError(error: unknown): unknown {
+    return mapRpcError(error, {
+      secrets: this._client._secrets(this._capability),
+      sandboxId: this.id,
+      operationId: this.operationId,
+      sessionRpc: true,
+    });
   }
 
   private async execBuffered(command: Command, options: ExecOptions, input: Uint8Array | undefined): Promise<ExecResult> {
@@ -386,7 +961,7 @@ export class Sandbox {
 
   /** @internal */
   async _refreshCapabilityOnce(): Promise<void> {
-    const refreshed = await this._client.sandboxes.get(this.id);
+    const refreshed = await this._client.getSandbox(this.id);
     if (refreshed.lastObservedStatus === Status.FAILED) {
       const message = refreshed._failureMessage || refreshed._failureCode || "sandbox failed";
       this.lastObservedStatus = Status.FAILED;
@@ -707,4 +1282,108 @@ function capabilityIsExpired(capability: string): boolean {
   } catch {
     return false;
   }
+}
+
+function callUnaryWithOptions<Req, Res>(
+  method: (
+    request: Req,
+    metadata: grpc.Metadata,
+    options: grpc.CallOptions,
+    callback: (error: grpc.ServiceError | null, response: Res) => void,
+  ) => grpc.ClientUnaryCall,
+  request: Req,
+  metadata: grpc.Metadata,
+  deadline: Deadline,
+): Promise<Res> {
+  return new Promise((resolve, reject) => {
+    method(request, metadata, { deadline: deadline.deadlineDate() }, (error, response) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(response);
+    });
+  });
+}
+
+function validateRemotePath(value: string): string {
+  if (!value || value.includes("\0")) {
+    throw new InvalidRequestError("path must be a non-empty string without NUL");
+  }
+  return value;
+}
+
+function normalizeWriteData(data: Uint8Array | string): Uint8Array {
+  if (typeof data === "string") {
+    return new TextEncoder().encode(data);
+  }
+  return data;
+}
+
+function fileWriteFrames(
+  sandboxId: string,
+  remotePath: string,
+  payload: Uint8Array,
+): Array<{ start?: unknown; chunk?: unknown }> {
+  const frames: Array<{ start?: unknown; chunk?: unknown }> = [{ start: { sandboxId, path: remotePath } }];
+  for (let offset = 0; offset < payload.length; offset += TRANSFER_CHUNK_BYTES) {
+    frames.push({ chunk: { data: Buffer.from(payload.slice(offset, offset + TRANSFER_CHUNK_BYTES)) } });
+  }
+  return frames;
+}
+
+function fileInfoFromProto(file: ProtoFileInfo): FileInfo {
+  return {
+    path: file.path ?? "",
+    name: file.name ?? "",
+    kind: fileKindFromProto(file.kind ?? 0),
+    size: Number(file.size ?? 0),
+    mode: Number(file.mode ?? 0),
+    modifiedAt: dateFromUnixNanos(Number(file.modifiedAtUnixNanos ?? 0)),
+  };
+}
+
+function fileKindFromProto(kind: ProtoFileKind): FileKind {
+  switch (kind) {
+    case ProtoFileKind.FILE_KIND_FILE:
+      return FileKind.FILE;
+    case ProtoFileKind.FILE_KIND_DIRECTORY:
+      return FileKind.DIRECTORY;
+    case ProtoFileKind.FILE_KIND_SYMLINK:
+      return FileKind.SYMLINK;
+    default:
+      return FileKind.OTHER;
+  }
+}
+
+function dateFromUnixNanos(nanos: number): Date {
+  return new Date(nanos / 1e6);
+}
+
+async function fsyncParentDir(parent: string): Promise<void> {
+  let handle: fsPromises.FileHandle;
+  try {
+    handle = await fsPromises.open(parent, fs.constants.O_RDONLY);
+  } catch (error) {
+    if (isUnsupportedDirectoryFsyncError(error)) {
+      return;
+    }
+    throw error;
+  }
+  try {
+    try {
+      await handle.sync();
+    } catch (error) {
+      if (!isUnsupportedDirectoryFsyncError(error)) {
+        throw error;
+      }
+    }
+  } finally {
+    await handle.close();
+  }
+}
+
+function isUnsupportedDirectoryFsyncError(error: unknown): boolean {
+  const code = (error as { code?: string } | undefined)?.code;
+  return code === "EINVAL" || code === "ENOTSUP" || code === "EOPNOTSUPP";
 }

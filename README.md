@@ -14,7 +14,7 @@ npm install @bonya-ai/tyto
 import { Tyto } from "@bonya-ai/tyto";
 
 const client = new Tyto();                                   // reads BONYA_API_KEY
-const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
 const result = await sandbox.exec(["echo", "hello"], { check: true });
 console.log(result.stdout);                                   // hello
@@ -46,6 +46,9 @@ declarations, and the public surface documented here is stable within `1.x`.
 - [TTY exec](#tty-exec)
 - [Managed console sessions](#managed-console-sessions)
 - [Files](#files)
+- [Jobs](#jobs)
+- [Job schedules](#job-schedules)
+- [Templates](#templates)
 - [Preview URLs](#preview-urls)
 - [Snapshots](#snapshots)
 - [Organizations](#organizations-1)
@@ -58,38 +61,42 @@ declarations, and the public surface documented here is stable within `1.x`.
 
 | I want to… | Call |
 | --- | --- |
-| Start a sandbox | `client.sandboxes.create({ template })` |
-| Reconnect to one | `client.sandboxes.get(id)` / `.getByName(name)` |
-| Find my sandboxes | `client.sandboxes.list()` |
+| Start a sandbox | `client.createSandbox({ template })` |
+| Reconnect to one | `client.getSandbox(id)` / `.getSandboxByName(name)` |
+| Find my sandboxes | `client.listSandboxes()` |
 | Run a command | `sandbox.exec(cmd)` |
 | Watch output as it happens | `sandbox.execStream(cmd)` |
-| Keep a terminal alive across reconnects | `sandbox.sessions.create(...)` / `.attach(...)` |
-| Read and write files | `sandbox.files.read/write/upload/download/...` |
-| Expose a port to a browser | `sandbox.previews.create(port)` |
+| Keep a terminal alive across reconnects | `sandbox.createSession(...)` / `.attachSession(...)` |
+| Read and write files | `sandbox.readFile/writeFile/uploadFile/downloadFile/...` |
+| Expose a port to a browser | `sandbox.createPreview(port)` |
 | Save state for later | `sandbox.snapshot()` |
 | Pause and resume | suspend is automatic; `sandbox.resume()` is explicit |
+| Run a job to completion | `client.runJob(spec)` |
+| Start a job and check on it later | `client.startJob(spec)` / `client.getJobRun(runId)` |
+| Run something on a schedule | `client.createJobSchedule(schedule, spec)` |
+| See which templates are available | `client.listTemplates()` |
 | See which organizations I belong to | `client.listOrganizations()` |
 | Act in a specific organization | `client.organizationId = id`, or `organizationId` at construction |
 
-Every sandbox operation on `client.sandboxes` also has a flat form directly
-on `Tyto` — `client.createSandbox(...)`, `client.getSandbox(id)`,
-`client.getSandboxByName(name)`, `client.listSandboxes()`,
-`client.deleteSandbox(id)`, `client.resumeSandbox(id)` — for callers who
-would rather call a verb than navigate a namespace. Both spellings are the
-same implementation; use whichever reads better at the call site.
+Every operation is a flat method: `client.createSandbox(...)`,
+`client.getSandbox(id)`, `client.listSandboxes()`, `client.deleteSandbox(id)`,
+`client.resumeSandbox(id)` on `Tyto`; `sandbox.createSession(...)`,
+`sandbox.attachSession(...)`, `sandbox.createPreview(port)`,
+`sandbox.snapshot()`, and the file methods (`readFile`, `writeFile`, ...)
+directly on `Sandbox`. There is no separate namespace to navigate.
 
-Sessions, previews, and snapshots have flat forms too —
-`client.createSession(sandboxId, name, cmd)`, `client.listSessions(sandboxId)`,
-`client.killSession(sandboxId, name)`, `client.attachSession(sandboxId, name)`,
-`client.createPreview(sandboxId, port)`, `client.listPreviews(sandboxId)`,
-`client.deletePreview(sandboxId, id)`, `client.createSnapshot(sandboxId)`,
-`client.deleteSnapshot(sandboxId, snapshotId)` — but unlike the
-sandbox-collection methods above, each of these needs a resolved `Sandbox` to
-call through, so every one does a `getSandbox()` first and then delegates:
-one extra round trip compared to already holding the handle. Prefer
-`sandbox.sessions.create(...)` (or the equivalent) when a `Sandbox` is
-already in hand, such as right after `createSandbox()`; reach for the flat
-form when all you have is an id.
+Client-level convenience forms also exist for sandbox-scoped operations when
+all you have is an id — `client.createSession(sandboxId, name, cmd)`,
+`client.listSessions(sandboxId)`, `client.killSession(sandboxId, name)`,
+`client.attachSession(sandboxId, name)`, `client.createPreview(sandboxId, port)`,
+`client.listPreviews(sandboxId)`, `client.deletePreview(sandboxId, id)`,
+`client.createSnapshot(sandboxId)`, `client.deleteSnapshot(sandboxId, snapshotId)`
+— each does a `getSandbox()` first and then delegates to the `Sandbox` method
+of the same name, which costs one extra round trip compared to already
+holding the handle. Prefer `sandbox.createSession(...)` (or the equivalent)
+directly when a `Sandbox` is already in hand, such as right after
+`createSandbox()`; reach for the client-level form when all you have is an
+id.
 
 ## Install
 
@@ -115,7 +122,6 @@ const client = new Tyto();
 | Option | Environment variable | Default |
 | --- | --- | --- |
 | `apiKey` | `BONYA_API_KEY` | *required* |
-| `endpoint` | `BONYA_ENDPOINT` | `https://api.tyto.run` |
 | `organizationId` | `BONYA_ORGANIZATION_ID` | your personal organization |
 | `caBundle` | `BONYA_CA_BUNDLE` | system trust store |
 | `timeout` | — | `30` (seconds) |
@@ -125,17 +131,12 @@ const client = new Tyto();
 ```ts
 const client = new Tyto({
   apiKey: process.env.BONYA_API_KEY,
-  endpoint: "https://api.tyto.run",
   organizationId: process.env.BONYA_ORGANIZATION_ID,
   timeout: 30,
 });
 ```
 
 `apiKey` is required.
-
-`endpoint` must be an HTTPS URL. The SDK rejects non-HTTPS URLs, URLs with
-userinfo, query strings, fragments, malformed ports, or no host. Trailing
-slashes are normalized. Point it at your own deployment if you self-host.
 
 `caBundle` points to a PEM bundle used for private development CAs. If the file
 cannot be read, the constructor throws `InvalidRequestError`.
@@ -151,7 +152,7 @@ for one capability refresh when the SDK can prove an exec capability token is
 expired before responses start. Filesystem calls are not retried on transport
 unavailability; they may refresh a rejected filesystem capability once.
 
-`filesystemReadLimit` caps bytes buffered by `sandbox.files.read()`. It must be
+`filesystemReadLimit` caps bytes buffered by `sandbox.readFile()`. It must be
 a non-negative integer and defaults to 64 MiB.
 
 Close clients when done — the process will not exit while channels are open:
@@ -159,7 +160,7 @@ Close clients when done — the process will not exit while channels are open:
 ```ts
 const client = new Tyto();
 try {
-  const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+  const sandbox = await client.createSandbox({ template: "bonya-dev" });
   // ...
 } finally {
   client.close();
@@ -201,7 +202,6 @@ naming one that does not exist.
 # .github/workflows/integration.yml
 env:
   BONYA_API_KEY: ${{ secrets.BONYA_API_KEY }}
-  BONYA_ENDPOINT: https://api.tyto.run
   BONYA_ORGANIZATION_ID: ${{ vars.BONYA_ORGANIZATION_ID }}
 ```
 
@@ -215,15 +215,15 @@ const client = new Tyto();
 ```typescript
 import { Tyto, Wait } from "@bonya-ai/tyto";
 
-const client = new Tyto({ apiKey: "BONYA_API_KEY", endpoint: "https://api.tyto.run" });
-const sandbox = await client.sandboxes.create({
-  template: "ubuntu-24.04",
+const client = new Tyto()  // reads BONYA_API_KEY;
+const sandbox = await client.createSandbox({
+  template: "bonya-dev",
   wait: Wait.READY,
   idempotencyKey: "create-job-123",
 });
 ```
 
-`client.sandboxes.create(options)` returns a `Promise<Sandbox>`.
+`client.createSandbox(options)` returns a `Promise<Sandbox>`.
 
 Options:
 
@@ -261,7 +261,7 @@ console.log(sandbox.lastObservedStatus);
 Reconnect to an existing sandbox by ID:
 
 ```typescript
-const sandbox = await client.sandboxes.get("sbx_123");
+const sandbox = await client.getSandbox("sbx_123");
 const result = await sandbox.exec("printf reconnected", { check: true });
 console.log(result.stdout);
 ```
@@ -278,7 +278,7 @@ List sandboxes lazily:
 ```typescript
 import { Status } from "@bonya-ai/tyto";
 
-for await (const summary of client.sandboxes.list({ states: [Status.RUNNING, Status.SUSPENDED], limit: 20 })) {
+for await (const summary of client.listSandboxes({ states: [Status.RUNNING, Status.SUSPENDED], limit: 20 })) {
   console.log(summary.id, summary.lastObservedStatus);
 }
 ```
@@ -318,7 +318,7 @@ RPC.
 There is no automatic cleanup on scope exit; use `try`/`finally`:
 
 ```typescript
-const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+const sandbox = await client.createSandbox({ template: "bonya-dev" });
 try {
   await sandbox.exec("printf work", { check: true });
 } finally {
@@ -539,18 +539,19 @@ TTY rules:
 
 ## Managed Console Sessions
 
-Every `Sandbox` has `sandbox.sessions`, a `SandboxSessions` object for named,
-persistent command sessions that outlive the client connection. This is
-different from `execStream()`: an Exec process dies when its stream closes,
-but a managed session keeps running detached, and you can reattach later —
-even after the sandbox warm-suspends and resumes — and replay what it
-produced while nobody was watching.
+Every `Sandbox` has flat methods (`createSession`, `listSessions`,
+`killSession`, `attachSession`) for named, persistent command sessions that
+outlive the client connection. This is different from `execStream()`: an
+Exec process dies when its stream closes, but a managed session keeps
+running detached, and you can reattach later — even after the sandbox
+warm-suspends and resumes — and replay what it produced while nobody was
+watching.
 
 ```typescript
-const info = await sandbox.sessions.create("server", ["bash"], { cols: 120, rows: 40 });
+const info = await sandbox.createSession("server", ["bash"], { cols: 120, rows: 40 });
 console.log(info.name, info.status);
 
-const session = await sandbox.sessions.attach("server");
+const session = await sandbox.attachSession("server");
 session.write(new TextEncoder().encode("npm run dev\n"));
 session.resize({ cols: 140, rows: 45 });
 for await (const event of session) {
@@ -558,18 +559,18 @@ for await (const event of session) {
 }
 session.detach();
 
-const list = await sandbox.sessions.list();
+const list = await sandbox.listSessions();
 for (const info of list) {
   console.log(info.name, info.status);
 }
 
-await sandbox.sessions.kill("server");
+await sandbox.killSession("server");
 ```
 
 ### Create
 
 ```typescript
-sandbox.sessions.create(name, command, { env, cwd, cols, rows, replace })
+sandbox.createSession(name, command, { env, cwd, cols, rows, replace })
 ```
 
 `name` must match `^[a-z][a-z0-9-]{0,31}$`. `command` is a non-empty array
@@ -587,14 +588,14 @@ Returns a `Promise<SessionInfo>`.
 ### List
 
 ```typescript
-const list = await sandbox.sessions.list();
+const list = await sandbox.listSessions();
 for (const info of list) {
   console.log(info.name, info.status);
 }
 console.log(list.sandboxSuspended);
 ```
 
-`sandbox.sessions.list()` returns a `SessionList`: an immutable, iterable
+`sandbox.listSessions()` returns a `SessionList`: an immutable, iterable
 sequence of `SessionInfo` that also carries `sandboxSuspended: boolean`.
 Listing works on a suspended sandbox without waking it; `sandboxSuspended:
 true` marks a result served from the suspend-time snapshot rather than the
@@ -603,7 +604,7 @@ live guest.
 ### Attach
 
 ```typescript
-const session = await sandbox.sessions.attach("server", { cols: 120, rows: 40, maxReplayBytes: 0 });
+const session = await sandbox.attachSession("server", { cols: 120, rows: 40, maxReplayBytes: 0 });
 console.log(session.info.name, session.replayedBytes, session.historyDropped);
 
 for await (const event of session) {
@@ -645,7 +646,7 @@ stream is still open.
 ### Kill
 
 ```typescript
-await sandbox.sessions.kill("server", { signal: "TERM", graceMs: 5000 });
+await sandbox.killSession("server", { signal: "TERM", graceMs: 5000 });
 ```
 
 Signals the session's process group (default `TERM`), escalating to
@@ -684,79 +685,80 @@ keeps producing it.
 ### Capability refresh
 
 Session calls transparently reissue an expired capability and retry once,
-the same way `execStream()` and `sandbox.files` do. Call
-`sandbox.reissueCapability()` directly only if you manage tokens yourself.
+the same way `execStream()` and the file methods (`readFile()`,
+`writeFile()`, ...) do. Call `sandbox.reissueCapability()` directly only if
+you manage tokens yourself.
 
 ## Files
 
-Every `Sandbox` has `sandbox.files`, a `SandboxFiles` object:
+File operations are flat methods directly on `Sandbox`:
 
 ```typescript
-await sandbox.files.write("/workspace/message.txt", "hello\n");
-const payload = await sandbox.files.read("/workspace/message.txt");
+await sandbox.writeFile("/workspace/message.txt", "hello\n");
+const payload = await sandbox.readFile("/workspace/message.txt");
 console.log(Buffer.from(payload).toString("utf-8"));
 
-await sandbox.files.upload("local-input.bin", "/workspace/input.bin");
-await sandbox.files.download("/workspace/input.bin", "local-output.bin");
+await sandbox.uploadFile("local-input.bin", "/workspace/input.bin");
+await sandbox.downloadFile("/workspace/input.bin", "local-output.bin");
 
-const entries = await sandbox.files.list("/workspace");
-const info = await sandbox.files.stat("/workspace/message.txt");
+const entries = await sandbox.listFiles("/workspace");
+const info = await sandbox.statFile("/workspace/message.txt");
 
-await sandbox.files.mkdir("/workspace/output");
-await sandbox.files.move("/workspace/message.txt", "/workspace/output/message.txt");
-await sandbox.files.remove("/workspace/output", true);
+await sandbox.mkdirFile("/workspace/output");
+await sandbox.moveFile("/workspace/message.txt", "/workspace/output/message.txt");
+await sandbox.removeFile("/workspace/output", true);
 ```
 
 Methods:
 
-- `read(path: string): Promise<Uint8Array>`
-- `write(path: string, data: Uint8Array | string): Promise<void>`
-- `upload(localPath: string, remotePath: string): Promise<void>`
-- `download(remotePath: string, localPath: string): Promise<void>`
-- `list(path: string): Promise<FileInfo[]>`
-- `stat(path: string): Promise<FileInfo>`
-- `mkdir(path: string): Promise<void>`
-- `remove(path: string, recursive?: boolean): Promise<void>`
-- `move(source: string, destination: string): Promise<void>`
+- `readFile(path: string): Promise<Uint8Array>`
+- `writeFile(path: string, data: Uint8Array | string): Promise<void>`
+- `uploadFile(localPath: string, remotePath: string): Promise<void>`
+- `downloadFile(remotePath: string, localPath: string): Promise<void>`
+- `listFiles(path: string): Promise<FileInfo[]>`
+- `statFile(path: string): Promise<FileInfo>`
+- `mkdirFile(path: string): Promise<void>`
+- `removeFile(path: string, recursive?: boolean): Promise<void>`
+- `moveFile(source: string, destination: string): Promise<void>`
 
 Remote paths must be non-empty strings without NUL. The SDK accepts absolute
 or relative remote paths and leaves interpretation to the guest runtime.
 
-`read()` buffers the entire remote file in memory and returns bytes. It
+`readFile()` buffers the entire remote file in memory and returns bytes. It
 throws `FilesystemLimitError` before exceeding `filesystemReadLimit`.
 
-`write()` accepts a `Uint8Array` or a string. Strings are encoded as UTF-8.
-It streams the payload in 64 KiB chunks, writes through a guest-side
+`writeFile()` accepts a `Uint8Array` or a string. Strings are encoded as
+UTF-8. It streams the payload in 64 KiB chunks, writes through a guest-side
 temporary file, and publishes it by replacing the final directory entry. The
 final path is not followed when it is a symlink.
 
-`upload()` streams a local file to the remote path in 64 KiB chunks.
-`download()` streams a remote file into a hidden temporary file in the
+`uploadFile()` streams a local file to the remote path in 64 KiB chunks.
+`downloadFile()` streams a remote file into a hidden temporary file in the
 destination directory, fsyncs it, atomically replaces the destination with
 `fs.rename`, and fsyncs the parent directory where supported. If a read or
 write error happens before replacement, the temporary file is removed and
 the previous destination is left unchanged.
 
-`list()` returns immediate children sorted by name. It returns a complete
-array or throws; it does not return partial results after a remote listing
-error.
+`listFiles()` returns immediate children sorted by name. It returns a
+complete array or throws; it does not return partial results after a remote
+listing error.
 
-`stat()` returns lstat-style metadata. A final symlink is reported as a
+`statFile()` returns lstat-style metadata. A final symlink is reported as a
 symlink rather than followed.
 
-`move()` is same-filesystem, atomic, and no-overwrite. Cross-filesystem
+`moveFile()` is same-filesystem, atomic, and no-overwrite. Cross-filesystem
 moves throw `CrossFilesystemMoveError`; destination-exists errors throw
 `RemoteFileExistsError`.
 
-`remove(path, true)` removes directories recursively. Recursive remove does
-not follow symlinks and is not atomic.
+`removeFile(path, true)` removes directories recursively. Recursive remove
+does not follow symlinks and is not atomic.
 
 `FileInfo` is immutable:
 
 ```typescript
 import { FileKind } from "@bonya-ai/tyto";
 
-const info = await sandbox.files.stat("/workspace/output/message.txt");
+const info = await sandbox.statFile("/workspace/output/message.txt");
 console.log(info.path);
 console.log(info.name);
 console.log(info.kind === FileKind.FILE);
@@ -767,6 +769,108 @@ console.log(info.modifiedAt); // Date
 
 `FileKind` values are `FILE`, `DIRECTORY`, `SYMLINK`, and `OTHER`.
 
+## Jobs
+
+A job is a managed run of a command or script — on a new sandbox (created
+and, by default, deleted for you) or an existing one.
+
+```typescript
+const run = await client.runJob({
+  newSandbox: { template: "bonya-dev" },
+  cmd: ["./run-tests.sh"],
+});
+console.log(run.status, run.result?.exitCode);
+```
+
+`runJob` blocks until the run finishes, bounded by the client's own timeout
+— use it for short jobs. `startJob` returns immediately with a run id
+instead:
+
+```typescript
+const { runId } = await client.startJob({
+  existingSandboxId: "sbx-123",
+  cmd: ["./long-migration.sh"],
+});
+// ... later ...
+const detail = await client.getJobRun(runId);
+console.log(detail.status, detail.spec, detail.timeline);
+```
+
+`JobSpec` requires exactly one of `existingSandboxId`/`newSandbox`, and
+exactly one of `cmd`/`script`. `disposition` (`Disposition.DELETE`, the
+default, or `Disposition.KEEP`) controls what happens to a sandbox the job
+itself created once the run ends; it's not meaningful for
+`existingSandboxId`.
+
+`getJobRun` returns `JobRunDetail`, which adds the stored `spec` and an
+activity `timeline` to the run summary `listJobRuns` returns. There is no
+endpoint to edit a run in place: to "edit and rerun" one, fetch it with
+`getJobRun`, change what you need on its `spec`, and pass that to `runJob`
+or `startJob` as a new run.
+
+```typescript
+for await (const run of client.listJobRuns({ sandboxId: "sbx-123" })) {
+  console.log(run.runId, run.status);
+}
+await client.cancelJobRun(runId); // requests cancellation; cleanup still runs
+```
+
+`cancelJobRun` cancels rather than terminates, so the run's own cleanup
+(e.g. deleting a sandbox it created) still executes.
+
+## Job Schedules
+
+A schedule wraps a `JobSpec` with timing — cron, interval, or a one-shot
+future time — so it runs without you calling `runJob` yourself.
+
+```typescript
+const schedule = await client.createJobSchedule(
+  { intervalSeconds: 3600 },
+  { newSandbox: { template: "bonya-dev" }, cmd: ["./nightly-report.sh"] },
+);
+console.log(schedule.scheduleId, schedule.nextRunAtUnixNanos);
+```
+
+`ScheduleSpec` requires exactly one of `cronExpressions`, `intervalSeconds`,
+and `runAtUnixNanos` (a one-shot: a single future calendar time, refused if
+in the past). `overlap` (default `ScheduleOverlap.SKIP`) controls what a
+fire does when the previous run from the same schedule is still going.
+
+```typescript
+for await (const schedule of client.listJobSchedules()) {
+  console.log(schedule.scheduleId);
+}
+const schedule = await client.getJobSchedule(scheduleId);
+
+// updateJobSchedule replaces the whole schedule -- pass every field you
+// want to keep, not just the one you're changing.
+await client.updateJobSchedule(scheduleId, { intervalSeconds: 7200 }, jobSpec);
+
+await client.setJobSchedulePaused(scheduleId, true, { note: "pausing for maintenance" });
+await client.triggerJobSchedule(scheduleId); // fires one run now, ignoring timing
+await client.deleteJobSchedule(scheduleId);
+```
+
+`JobSchedule.recentRunIds` holds the last 10 fires' run ids (oldest first,
+including manual triggers), each a valid `getJobRun` id — so you can follow
+a schedule straight to its recent runs without a separate `listJobRuns`
+call.
+
+## Templates
+
+```typescript
+const templates = await client.listTemplates();
+for (const template of templates) {
+  console.log(template.id, template.version, template.isDefault, template.metadata.os);
+}
+```
+
+Lists every `templateId`/version `createSandbox` and `runJob` will accept,
+with metadata (OS, installed language stacks, which AI agent CLIs are
+preinstalled) to help pick one. Not paginated: the catalog is the same for
+every caller. `createSandbox`'s `template` option may be omitted to use the
+deployment's configured default template, if it has one.
+
 ## Preview URLs
 
 A preview publishes one guest port at an HTTPS URL a browser can open. The
@@ -774,23 +878,23 @@ server must bind a port in 1024-65535; privileged ports are never
 previewable, so a guest's ssh can't be handed out by accident.
 
 ```typescript
-const preview = await sandbox.previews.create(3000, { name: "web" });
+const preview = await sandbox.createPreview(3000, { name: "web" });
 console.log(preview.url); // https://pv-<26 chars>.preview.tyto.run
 
-await sandbox.previews.list();
-await sandbox.previews.delete(preview.id);
+await sandbox.listPreviews();
+await sandbox.deletePreview(preview.id);
 ```
 
 ### Opening one in a browser
 
 A token-mode preview needs the sandbox's capability, and a URL is not a safe
-place to leave one. `browserUrl()` produces a single-use entry point: the
-gateway validates the token, trades it for a host-scoped `HttpOnly` cookie,
-and redirects to the same address without it, so no page is ever rendered at
-a URL containing the credential.
+place to leave one. `previewBrowserUrl()` produces a single-use entry point:
+the gateway validates the token, trades it for a host-scoped `HttpOnly`
+cookie, and redirects to the same address without it, so no page is ever
+rendered at a URL containing the credential.
 
 ```typescript
-const url = sandbox.previews.browserUrl(preview);
+const url = sandbox.previewBrowserUrl(preview);
 // open `url` in a browser
 ```
 
@@ -803,7 +907,7 @@ expires. It throws on a public preview, which has no token to exchange.
 ```typescript
 import { PreviewAuth } from "@bonya-ai/tyto";
 
-const publicPreview = await sandbox.previews.create(8080, { auth: PreviewAuth.PUBLIC });
+const publicPreview = await sandbox.createPreview(8080, { auth: PreviewAuth.PUBLIC });
 ```
 
 `PUBLIC` means exactly that: anyone with the URL reaches the service, with no
@@ -919,7 +1023,7 @@ All SDK exceptions inherit from `TytoError`, which itself extends `Error`.
 import { TytoError } from "@bonya-ai/tyto";
 
 try {
-  await client.sandboxes.get("sbx_missing");
+  await client.getSandbox("sbx_missing");
 } catch (error) {
   if (error instanceof TytoError) {
     console.log(error.message);
@@ -946,11 +1050,15 @@ Public exceptions:
 - `SandboxCreationTimeoutError`: create deadline expired.
 - `CapabilityRejectedError`: guest capability was rejected and could not be
   refreshed.
-- `SessionExistsError`: `sessions.create()` targeted a name that already has a
+- `SessionExistsError`: `createSession()` targeted a name that already has a
   record and either no `replace: true` was given or the record is not
   terminal.
-- `SessionNotFoundError`: `sessions.attach()` or `sessions.kill()` named a
+- `SessionNotFoundError`: `attachSession()` or `killSession()` named a
   session that does not exist.
+- `JobRunNotFoundError`: `getJobRun()` or `cancelJobRun()` named a run that
+  does not exist.
+- `JobScheduleNotFoundError`: a job schedule call named a schedule that does
+  not exist.
 - `FilesystemError`: general filesystem failure.
 - `RemoteFileNotFoundError`: remote file or directory missing.
 - `RemoteFileExistsError`: remote destination already exists.
@@ -973,7 +1081,7 @@ Examples:
 import { AuthenticationError, SandboxNotFoundError } from "@bonya-ai/tyto";
 
 try {
-  await client.sandboxes.get("sbx_123");
+  await client.getSandbox("sbx_123");
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.log("check BONYA_API_KEY");
@@ -989,7 +1097,7 @@ try {
 import { FilesystemError, RemoteFileNotFoundError } from "@bonya-ai/tyto";
 
 try {
-  await sandbox.files.read("/workspace/missing.txt");
+  await sandbox.readFile("/workspace/missing.txt");
 } catch (error) {
   if (error instanceof RemoteFileNotFoundError) {
     console.log("missing");
@@ -1020,9 +1128,9 @@ try {
 Use `try`/`finally` for deterministic cleanup:
 
 ```typescript
-const client = new Tyto({ apiKey: "BONYA_API_KEY", endpoint: "https://api.tyto.run" });
+const client = new Tyto()  // reads BONYA_API_KEY;
 try {
-  const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+  const sandbox = await client.createSandbox({ template: "bonya-dev" });
   try {
     const session = sandbox.execStream(["cat"]);
     try {
@@ -1048,14 +1156,14 @@ Ownership rules:
 - `sandbox.delete()` affects the remote sandbox and updates the local handle
   to `Status.DELETED`. It is idempotent on the same `Sandbox` object.
 - Closing an unfinished `execStream()` session cancels the remote Exec.
-- Closing an unfinished `sessions.attach()` stream detaches the guest
+- Closing an unfinished `attachSession()` stream detaches the guest
   process rather than killing it; the process keeps running.
 - `Snapshot.delete()` deletes the remote snapshot identity and is a local
   no-op when repeated on the same object.
 
 For intentionally persistent sandboxes, do not delete on scope exit. Store
 `sandbox.id`, close the client, and reconnect later with
-`client.sandboxes.get`.
+`client.getSandbox`.
 
 ## Current Limitations
 
@@ -1071,7 +1179,7 @@ surface, mirroring the Python SDK's scope:
   preempts the previous one.
 - `SandboxSummary` values are metadata only and cannot run Exec.
 - Buffered Exec stores stdout and stderr in memory.
-- `sandbox.files.read()` stores the full file in memory up to
+- `sandbox.readFile()` stores the full file in memory up to
   `filesystemReadLimit`.
 - Filesystem writes, uploads, moves, mkdir, and removes are not retried
   after ambiguous transport errors.
@@ -1095,13 +1203,7 @@ export BONYA_API_KEY=byk_...
 ```
 
 **`AuthenticationError`**
-The key reached the server and was rejected. It may be revoked, or belong to a
-different deployment than `BONYA_ENDPOINT` points at.
-
-**`InvalidRequestError: endpoint must use https`**
-The endpoint is validated before any connection is attempted. `http://` URLs,
-bare hostnames, and URLs carrying userinfo, a query string, or a fragment are
-all rejected. `https://api.tyto.run` is the shape to match.
+The key reached the server and was rejected. It may be revoked.
 
 **`InvalidRequestError: organization_id must be a non-empty string`**
 `BONYA_ORGANIZATION_ID` is set but empty — usually an unset variable expanded in
@@ -1126,9 +1228,9 @@ original creation rather than starting a second sandbox.
 **TLS/certificate errors against a private deployment**
 Point `caBundle` (or `BONYA_CA_BUNDLE`) at the PEM bundle for your CA.
 
-**`FilesystemLimitError` from `files.read()`**
+**`FilesystemLimitError` from `readFile()`**
 The file is larger than `filesystemReadLimit` (64 MiB by default). Raise the
-limit, or use `files.download()`, which streams to disk instead of buffering.
+limit, or use `downloadFile()`, which streams to disk instead of buffering.
 
 **A command hangs**
 `exec()` buffers all output and resolves only when the process exits, so a

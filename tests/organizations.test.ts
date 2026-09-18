@@ -45,9 +45,9 @@ describe("flat sandbox methods", () => {
     transport.tapi.generatedName = "flat-test";
     const client = makeClient(transport);
 
-    const created = await client.createSandbox({ template: "ubuntu-24.04" });
+    const created = await client.createSandbox({ template: "bonya-dev" });
 
-    const viaNamespace = await client.sandboxes.get(created.id);
+    const viaNamespace = await client.getSandbox(created.id);
     expect(viaNamespace.id).toBe(created.id);
 
     const viaFlat = await client.getSandbox(created.id);
@@ -85,7 +85,7 @@ describe("flat sandbox methods", () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
 
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
     sandbox.lastObservedStatus = Status.SUSPENDED;
 
     await sandbox.resume();
@@ -97,7 +97,7 @@ describe("flat sandbox methods", () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
 
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     await sandbox.delete();
     const second = await sandbox.delete();
@@ -110,7 +110,7 @@ describe("flat sandbox-scoped methods", () => {
   it("createSnapshot/deleteSnapshot resolve the handle then delegate", async () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     const snapshot = await client.createSnapshot(sandbox.id, { idempotencyKey: "snap-key" });
     expect(snapshot.sourceSandboxId).toBe(sandbox.id);
@@ -125,7 +125,7 @@ describe("flat sandbox-scoped methods", () => {
   it("createPreview/listPreviews/deletePreview resolve the handle then delegate", async () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     const preview = await client.createPreview(sandbox.id, 3000, { name: "web" });
     expect(preview.sandboxId).toBe(sandbox.id);
@@ -143,7 +143,7 @@ describe("flat sandbox-scoped methods", () => {
     const guest = new FakeSessionGuest();
     transport.guestStubFactory = () => guest as unknown as any;
     const client = makeClient(transport);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     const created = await client.createSession(sandbox.id, "server", ["bash"], { cols: 120, rows: 40 });
     expect(created.name).toBe("server");

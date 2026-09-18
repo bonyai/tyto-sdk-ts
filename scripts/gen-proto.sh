@@ -58,8 +58,8 @@ protoc \
   --ts_proto_opt=stringEnums=false \
   --ts_proto_opt=outputIndex=false \
   --ts_proto_opt=importSuffix=.js \
+  "$PROTO_DIR/tyto/runtime/v1/common.proto" \
   "$PROTO_DIR/tyto/runtime/v1/guest.proto" \
-  "$PROTO_DIR/tyto/runtime/v1/host.proto" \
   "$PROTO_DIR/tyto/runtime/v1/preview.proto" \
   "$PROTO_DIR/tyto/runtime/v1/tapi.proto"
 

@@ -10,15 +10,15 @@ import { makeClient, makeFakeTransport, RpcFailure } from "./fakes.js";
 async function makeSandbox() {
   const transport = makeFakeTransport();
   const client = makeClient(transport);
-  const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04", wait: Wait.NONE, idempotencyKey: "idem-1" });
+  const sandbox = await client.createSandbox({ template: "bonya-dev", wait: Wait.NONE, idempotencyKey: "idem-1" });
   return { sandbox, transport };
 }
 
-describe("SandboxPreviews", () => {
+describe("Sandbox preview methods", () => {
   it("returns the published preview", async () => {
     const { sandbox, transport } = await makeSandbox();
 
-    const preview = await sandbox.previews.create(3000, { name: "web" });
+    const preview = await sandbox.createPreview(3000, { name: "web" });
 
     expect(preview.id).toBe(transport.tapi.nextPreviewId);
     expect(preview.sandboxId).toBe(sandbox.id);
@@ -39,7 +39,7 @@ describe("SandboxPreviews", () => {
     const before = (sandbox as any)._capability;
     transport.tapi.previewCapabilityValue = "cap-with-preview-scope";
 
-    await sandbox.previews.create(3000);
+    await sandbox.createPreview(3000);
 
     expect(before).not.toBe("cap-with-preview-scope");
     expect((sandbox as any)._capability).toBe("cap-with-preview-scope");
@@ -48,7 +48,7 @@ describe("SandboxPreviews", () => {
   it("forwards public mode explicitly", async () => {
     const { sandbox, transport } = await makeSandbox();
 
-    const preview = await sandbox.previews.create(8080, { auth: PreviewAuth.PUBLIC });
+    const preview = await sandbox.createPreview(8080, { auth: PreviewAuth.PUBLIC });
 
     expect(preview.auth).toBe(PreviewAuth.PUBLIC);
     expect(transport.tapi.previewCreateRequests.at(-1).authMode).toBe(PreviewAuthMode.PREVIEW_AUTH_MODE_PUBLIC);
@@ -61,48 +61,48 @@ describe("SandboxPreviews", () => {
     [3000, { name: "x".repeat(81) }],
   ] as const)("validates before calling the server: port=%s", async (port, options) => {
     const { sandbox, transport } = await makeSandbox();
-    await expect(sandbox.previews.create(port, options)).rejects.toThrow(InvalidRequestError);
+    await expect(sandbox.createPreview(port, options)).rejects.toThrow(InvalidRequestError);
     expect(transport.tapi.previewCreateRequests).toHaveLength(0);
   });
 
   it("round-trips list and delete", async () => {
     const { sandbox, transport } = await makeSandbox();
-    const created = await sandbox.previews.create(3000, { name: "web" });
+    const created = await sandbox.createPreview(3000, { name: "web" });
 
-    const listed = await sandbox.previews.list();
+    const listed = await sandbox.listPreviews();
     expect(listed.map((p) => p.id)).toEqual([created.id]);
     expect(listed[0]!.url).toBe(created.url);
 
-    await sandbox.previews.delete(created.id);
-    expect(await sandbox.previews.list()).toEqual([]);
+    await sandbox.deletePreview(created.id);
+    expect(await sandbox.listPreviews()).toEqual([]);
     expect(transport.tapi.previewDeleteRequests.at(-1).previewId).toBe(created.id);
   });
 
   it("requires a preview id to delete", async () => {
     const { sandbox, transport } = await makeSandbox();
-    await expect(sandbox.previews.delete("")).rejects.toThrow(InvalidRequestError);
+    await expect(sandbox.deletePreview("")).rejects.toThrow(InvalidRequestError);
     expect(transport.tapi.previewDeleteRequests).toHaveLength(0);
   });
 
   it("browser_url carries the current capability", async () => {
     const { sandbox, transport } = await makeSandbox();
     transport.tapi.previewCapabilityValue = "cap-abc";
-    const preview = await sandbox.previews.create(3000);
+    const preview = await sandbox.createPreview(3000);
 
-    const url = sandbox.previews.browserUrl(preview);
+    const url = sandbox.previewBrowserUrl(preview);
     expect(url).toBe(`${preview.url}?bonya_token=cap-abc`);
   });
 
   it("refuses a browser_url exchange for a public preview", async () => {
     const { sandbox } = await makeSandbox();
-    const preview = await sandbox.previews.create(8080, { auth: PreviewAuth.PUBLIC });
-    expect(() => sandbox.previews.browserUrl(preview)).toThrow(InvalidRequestError);
+    const preview = await sandbox.createPreview(8080, { auth: PreviewAuth.PUBLIC });
+    expect(() => sandbox.previewBrowserUrl(preview)).toThrow(InvalidRequestError);
   });
 
   it("maps preview RPC errors to typed errors", async () => {
     const { sandbox, transport } = await makeSandbox();
     transport.tapi.previewCreateErrors.push(new RpcFailure(grpc.status.INVALID_ARGUMENT, "port must be between 1024 and 65535"));
-    await expect(sandbox.previews.create(3000)).rejects.toThrow(InvalidRequestError);
+    await expect(sandbox.createPreview(3000)).rejects.toThrow(InvalidRequestError);
   });
 
   it("does not leak the capability in preview error messages", async () => {
@@ -110,7 +110,7 @@ describe("SandboxPreviews", () => {
     const secret = (sandbox as any)._capability as string;
     transport.tapi.previewListErrors.push(new RpcFailure(grpc.status.INVALID_ARGUMENT, `bad token ${secret}`));
 
-    await expect(sandbox.previews.list()).rejects.toSatisfy((error: unknown) => !(error as Error).message.includes(secret));
+    await expect(sandbox.listPreviews()).rejects.toSatisfy((error: unknown) => !(error as Error).message.includes(secret));
   });
 
   it("reports an unknown auth mode as TOKEN", () => {

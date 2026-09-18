@@ -59,14 +59,14 @@ const EVERY_TAPI_RPC = [
 ].sort();
 
 async function driveEveryTapiRpc(client: ReturnType<typeof makeClient>): Promise<void> {
-  const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04", wait: Wait.NONE, idempotencyKey: "idem-1" });
-  await client.sandboxes.get("sbx-1");
-  for await (const _ of client.sandboxes.list()) {
+  const sandbox = await client.createSandbox({ template: "bonya-dev", wait: Wait.NONE, idempotencyKey: "idem-1" });
+  await client.getSandbox("sbx-1");
+  for await (const _ of client.listSandboxes()) {
     // drain
   }
-  await sandbox.previews.create(3000, { name: "web" });
-  await sandbox.previews.list();
-  await sandbox.previews.delete("pv-aaaaaaaaaaaaaaaaaaaaaaaaaa");
+  await sandbox.createPreview(3000, { name: "web" });
+  await sandbox.listPreviews();
+  await sandbox.deletePreview("pv-aaaaaaaaaaaaaaaaaaaaaaaaaa");
   const snapshot = await sandbox.snapshot({ idempotencyKey: "idem-snap" });
   await snapshot.delete();
   await sandbox.reissueCapability();
@@ -109,7 +109,7 @@ describe("organization context", () => {
   it("never reaches guest RPCs, and leaves capability metadata untouched", async () => {
     const transport = makeFakeTransport();
     const client = makeClient(transport, { organizationId: "org-2222" });
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04", wait: Wait.NONE });
+    const sandbox = await client.createSandbox({ template: "bonya-dev", wait: Wait.NONE });
 
     await sandbox.exec(["true"]);
 
@@ -126,7 +126,7 @@ describe("organization context", () => {
     const client = makeClient(transport, { organizationId: undefined });
     expect(client.organizationId).toBe("org-from-env");
 
-    await client.sandboxes.get("sbx-1");
+    await client.getSandbox("sbx-1");
     expect(recorded.get("getSandbox")!.get(ORGANIZATION_METADATA_KEY)).toEqual(["org-from-env"]);
 
     const explicit = makeClient(transport, { organizationId: "org-explicit" });
@@ -139,7 +139,7 @@ describe("organization context", () => {
     const client = makeClient(transport, { organizationId: "org-3333" });
     transport.tapi.getErrors.push(new RpcFailure(grpc.status.UNAVAILABLE, "try again"));
 
-    await client.sandboxes.get("sbx-1");
+    await client.getSandbox("sbx-1");
 
     expect(recorded.get("getSandbox")!.get(ORGANIZATION_METADATA_KEY)).toEqual(["org-3333"]);
   });
@@ -149,13 +149,13 @@ describe("organization context", () => {
     const recorded = recordMetadata(transport.tapi);
     const client = makeClient(transport, { organizationId: "org-before" });
 
-    await client.sandboxes.get("sbx-1");
+    await client.getSandbox("sbx-1");
     expect(recorded.get("getSandbox")!.get(ORGANIZATION_METADATA_KEY)).toEqual(["org-before"]);
 
     client.organizationId = "org-after";
     expect(client.organizationId).toBe("org-after");
 
-    await client.sandboxes.get("sbx-1");
+    await client.getSandbox("sbx-1");
     expect(recorded.get("getSandbox")!.get(ORGANIZATION_METADATA_KEY)).toEqual(["org-after"]);
   });
 

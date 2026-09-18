@@ -49,6 +49,8 @@ export class SessionExistsError extends TytoError {}
  */
 export const SessionExists = SessionExistsError;
 export class SessionNotFoundError extends TytoError {}
+export class JobRunNotFoundError extends TytoError {}
+export class JobScheduleNotFoundError extends TytoError {}
 export class SandboxDeletedError extends TytoError {}
 export class SandboxSuspendedError extends TytoError {}
 export class SandboxBusyError extends TytoError {}

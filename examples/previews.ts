@@ -11,7 +11,7 @@ async function main(): Promise<void> {
   const client = new Tyto({ apiKey });
 
   try {
-    const sandbox = await client.createSandbox({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     try {
       await client.createSession(sandbox.id, "web", ["python3", "-m", "http.server", "3000"]);
@@ -22,14 +22,15 @@ async function main(): Promise<void> {
       console.log(`preview: ${preview.url}`);
 
       // A token-mode URL needs the sandbox's capability, and a URL is not a
-      // safe place to leave one. browserUrl mints a single-use entry point:
-      // the gateway validates the token, swaps it for an HttpOnly cookie, and
-      // redirects to the same address without it.
+      // safe place to leave one. previewBrowserUrl mints a single-use entry
+      // point: the gateway validates the token, swaps it for an HttpOnly
+      // cookie, and redirects to the same address without it.
       //
       // Open it once and let the cookie carry the session. Do not share it --
-      // whoever holds it holds the sandbox's capability. There is no flat
-      // form for this: it is a local computation, not an RPC.
-      console.log(`open once: ${sandbox.previews.browserUrl(preview)}`);
+      // whoever holds it holds the sandbox's capability. There is no
+      // client-level flat form for this: it is a local computation, not an
+      // RPC, so it is only ever reached via a Sandbox handle.
+      console.log(`open once: ${sandbox.previewBrowserUrl(preview)}`);
 
       for (const existing of await client.listPreviews(sandbox.id)) {
         console.log(`${existing.id} :${existing.port} ${existing.auth}`);

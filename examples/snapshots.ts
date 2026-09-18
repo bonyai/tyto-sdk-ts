@@ -12,12 +12,12 @@ async function main(): Promise<void> {
 
   try {
     const sandbox = await client.createSandbox({
-      template: "ubuntu-24.04",
+      template: "bonya-dev",
       name: "snapshot-source",
     });
 
     try {
-      await sandbox.files.write("/workspace/state.txt", "captured\n");
+      await sandbox.writeFile("/workspace/state.txt", "captured\n");
 
       // Snapshot create requires a running source. Suspended, failed, and
       // deleted sandboxes each reject with their own error rather than a

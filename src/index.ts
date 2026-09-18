@@ -1,4 +1,4 @@
-export { Tyto, Bonya, SandboxCollection, ORGANIZATION_METADATA_KEY } from "./client.js";
+export { Tyto, Bonya, ORGANIZATION_METADATA_KEY } from "./client.js";
 export type {
   TytoOptions,
   BonyaOptions,
@@ -6,22 +6,44 @@ export type {
   ListSandboxesOptions,
   Organization,
   SandboxSummary,
+  Template,
+  TemplateMetadata,
+  TemplateStack,
   WaitInput,
 } from "./client.js";
+
+export {
+  Disposition,
+  JobRunAction,
+  JobRunStatus,
+  JobRunTimelineStatus,
+  ScheduleAction,
+  ScheduleOverlap,
+} from "./jobs.js";
+export type {
+  JobResult,
+  JobRun,
+  JobRunDetail,
+  JobRunTimelineEntry,
+  JobSandboxSpec,
+  JobSchedule,
+  JobScriptSpec,
+  JobSpec,
+  ScheduleSpec,
+} from "./jobs.js";
 
 export { Sandbox, ExecResult, Snapshot } from "./sandbox.js";
 export type { Command, DeleteResult, ExecOptions, ExecStreamOptions, ResumeResult } from "./sandbox.js";
 
 export { ExecSession } from "./session.js";
 
-export { SandboxFiles, FileKind } from "./files.js";
+export { FileKind } from "./files.js";
 export type { FileInfo } from "./files.js";
 
-export { SandboxPreviews, PreviewAuth } from "./previews.js";
-export type { Preview } from "./previews.js";
+export { PreviewAuth } from "./previews.js";
+export type { Preview, CreatePreviewOptions } from "./previews.js";
 
 export {
-  SandboxSessions,
   SessionStream,
   SessionEnded,
   SessionOutputDropped,
@@ -50,6 +72,8 @@ export {
   SessionExists,
   SessionExistsError,
   SessionNotFoundError,
+  JobRunNotFoundError,
+  JobScheduleNotFoundError,
   FilesystemError,
   RemoteFileNotFoundError,
   RemoteFileExistsError,

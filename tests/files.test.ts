@@ -261,19 +261,19 @@ afterEach(async () => {
   await fsPromises.rm(tmpDir, { recursive: true, force: true });
 });
 
-describe("SandboxFiles", () => {
+describe("Sandbox file methods", () => {
   it("reads binary content, writes utf-8/binary, and stats metadata", async () => {
     const guest = new FakeFilesystemGuest();
     const { client } = makeFilesClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    const data = await sandbox.files.read("/tmp/blob");
+    const data = await sandbox.readFile("/tmp/blob");
     expect(Buffer.from(data)).toEqual(Buffer.concat([Buffer.from("bin\0"), Buffer.from([0xff])]));
 
-    await sandbox.files.write("/tmp/empty", new Uint8Array());
-    await sandbox.files.write("/tmp/text", "snowman: ☃");
+    await sandbox.writeFile("/tmp/empty", new Uint8Array());
+    await sandbox.writeFile("/tmp/text", "snowman: ☃");
 
-    const info = await sandbox.files.stat("/tmp/blob");
+    const info = await sandbox.statFile("/tmp/blob");
     expect(info.kind).toBe(FileKind.FILE);
     expect(info.modifiedAt.getTime()).toBeCloseTo(1_700_000_000_123.456789, -1);
 
@@ -285,12 +285,12 @@ describe("SandboxFiles", () => {
   it("uploads in 64 KiB chunks and downloads atomically", async () => {
     const guest = new FakeFilesystemGuest();
     const { client } = makeFilesClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     const sourcePath = path.join(tmpDir, "source.bin");
     await fsPromises.writeFile(sourcePath, Buffer.concat([Buffer.alloc(TRANSFER_CHUNK_BYTES, "a"), Buffer.from("bbb")]));
 
-    await sandbox.files.upload(sourcePath, "/tmp/source.bin");
+    await sandbox.uploadFile(sourcePath, "/tmp/source.bin");
     const chunks = (guest.writeFramesLog[0] as any[]).filter((f) => f.chunk).map((f) => f.chunk.data.length);
     expect(chunks).toEqual([TRANSFER_CHUNK_BYTES, 3]);
 
@@ -298,7 +298,7 @@ describe("SandboxFiles", () => {
     await fsPromises.writeFile(destination, "old");
     guest.readChunks = [Buffer.from("new"), Buffer.from([0x00, ...Buffer.from("data")])];
 
-    await sandbox.files.download("/tmp/source.bin", destination);
+    await sandbox.downloadFile("/tmp/source.bin", destination);
     const result = await fsPromises.readFile(destination);
     expect(result).toEqual(Buffer.concat([Buffer.from("new"), Buffer.from([0x00]), Buffer.from("data")]));
 
@@ -310,12 +310,12 @@ describe("SandboxFiles", () => {
     const guest = new FakeFilesystemGuest();
     guest.readError = new RpcFailure(grpc.status.NOT_FOUND, "open file failed: missing");
     const { client } = makeFilesClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     const destination = path.join(tmpDir, "dest.bin");
     await fsPromises.writeFile(destination, "old");
 
-    await expect(sandbox.files.download("/tmp/missing", destination)).rejects.toThrow(RemoteFileNotFoundError);
+    await expect(sandbox.downloadFile("/tmp/missing", destination)).rejects.toThrow(RemoteFileNotFoundError);
 
     expect((await fsPromises.readFile(destination)).toString()).toBe("old");
     const entries = await fsPromises.readdir(tmpDir);
@@ -326,9 +326,9 @@ describe("SandboxFiles", () => {
     const guest = new FakeFilesystemGuest();
     guest.readChunks = [Buffer.from("1234"), Buffer.from("5")];
     const { client } = makeFilesClient(guest, 4);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    await expect(sandbox.files.read("/tmp/blob")).rejects.toThrow(FilesystemLimitError);
+    await expect(sandbox.readFile("/tmp/blob")).rejects.toThrow(FilesystemLimitError);
   });
 
   it("lists complete, sorted immediate children", async () => {
@@ -339,9 +339,9 @@ describe("SandboxFiles", () => {
       { path: "/tmp/c", name: "c", kind: 4 },
     ];
     const { client } = makeFilesClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    const files = await sandbox.files.list("/tmp");
+    const files = await sandbox.listFiles("/tmp");
     expect(files.map((f) => f.name)).toEqual(["a", "b", "c"]);
     expect(files.map((f) => f.kind)).toEqual([FileKind.SYMLINK, FileKind.DIRECTORY, FileKind.OTHER]);
   });
@@ -359,16 +359,16 @@ describe("SandboxFiles", () => {
     else if (method === "read") guest.readError = error;
     else guest.mkdirError = error;
     const { client } = makeFilesClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
     const action =
       method === "stat"
-        ? () => sandbox.files.stat("/tmp/missing")
+        ? () => sandbox.statFile("/tmp/missing")
         : method === "move"
-          ? () => sandbox.files.move("/tmp/a", "/tmp/b")
+          ? () => sandbox.moveFile("/tmp/a", "/tmp/b")
           : method === "read"
-            ? () => sandbox.files.read("/tmp/a")
-            : () => sandbox.files.mkdir("/tmp/a");
+            ? () => sandbox.readFile("/tmp/a")
+            : () => sandbox.mkdirFile("/tmp/a");
 
     await expect(action()).rejects.toThrow(errorClass);
   });
@@ -377,9 +377,9 @@ describe("SandboxFiles", () => {
     const guest = new FakeFilesystemGuest();
     guest.statError = new RpcFailure(grpc.status.PERMISSION_DENIED, "filesystem capability rejected");
     const { client, transport } = makeFilesClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    const info = await sandbox.files.stat("/tmp/blob");
+    const info = await sandbox.statFile("/tmp/blob");
 
     expect(info.name).toBe("blob");
     expect(transport.tapi.getRequests).toHaveLength(1);
@@ -391,9 +391,9 @@ describe("SandboxFiles", () => {
     const guest = new FakeFilesystemGuest();
     guest.statError = new RpcFailure(grpc.status.PERMISSION_DENIED, "filesystem capability sandbox binding rejected");
     const { client, transport } = makeFilesClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    await sandbox.files.stat("/tmp/blob");
+    await sandbox.statFile("/tmp/blob");
     expect(transport.tapi.getRequests).toHaveLength(1);
   });
 
@@ -401,9 +401,9 @@ describe("SandboxFiles", () => {
     const guest = new FakeFilesystemGuest();
     guest.statError = new RpcFailure(grpc.status.PERMISSION_DENIED, "stat file failed: permission denied");
     const { client, transport } = makeFilesClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    await expect(sandbox.files.stat("/root/secret")).rejects.toThrow(FilesystemError);
+    await expect(sandbox.statFile("/root/secret")).rejects.toThrow(FilesystemError);
     expect(transport.tapi.getRequests).toHaveLength(0);
     expect(guest.statRequests).toHaveLength(1);
   });
@@ -420,9 +420,9 @@ describe("SandboxFiles", () => {
       return originalStat(request, metadata, options, callback);
     };
     const { client, transport } = makeFilesClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    await expect(sandbox.files.stat("/tmp/blob")).rejects.toThrow(CapabilityRejectedError);
+    await expect(sandbox.statFile("/tmp/blob")).rejects.toThrow(CapabilityRejectedError);
     expect(transport.tapi.getRequests).toHaveLength(1);
   });
 
@@ -430,9 +430,9 @@ describe("SandboxFiles", () => {
     const guest = new FakeFilesystemGuest();
     guest.moveError = new RpcFailure(grpc.status.UNAVAILABLE, "uncertain outcome");
     const { client, transport } = makeFilesClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    await expect(sandbox.files.move("/tmp/a", "/tmp/b")).rejects.toThrow(FilesystemError);
+    await expect(sandbox.moveFile("/tmp/a", "/tmp/b")).rejects.toThrow(FilesystemError);
     expect(guest.moveRequests).toHaveLength(1);
     expect(transport.tapi.getRequests).toHaveLength(0);
   });
@@ -440,11 +440,11 @@ describe("SandboxFiles", () => {
   it("serializes mkdir/remove/move requests", async () => {
     const guest = new FakeFilesystemGuest();
     const { client } = makeFilesClient(guest);
-    const sandbox = await client.sandboxes.create({ template: "ubuntu-24.04" });
+    const sandbox = await client.createSandbox({ template: "bonya-dev" });
 
-    await sandbox.files.mkdir("/tmp/a");
-    await sandbox.files.remove("/tmp/a", true);
-    await sandbox.files.move("/tmp/a", "/tmp/b");
+    await sandbox.mkdirFile("/tmp/a");
+    await sandbox.removeFile("/tmp/a", true);
+    await sandbox.moveFile("/tmp/a", "/tmp/b");
 
     expect(guest.mkdirRequests[0].path).toBe("/tmp/a");
     expect(guest.removeRequests[0].recursive).toBe(true);

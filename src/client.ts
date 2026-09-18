@@ -40,8 +40,35 @@ import {
   type TApiOrganization,
   type TApiSandboxMetadata,
   type TApiServiceCreateResponse,
+  type TApiCancelJobRunResponse,
+  type TApiCreateJobScheduleResponse,
+  type TApiDeleteJobScheduleResponse,
+  type TApiGetJobRunResponse,
+  type TApiGetJobScheduleResponse,
+  type TApiJobRun,
+  type TApiListJobRunsResponse,
+  type TApiListJobSchedulesResponse,
+  type TApiListTemplatesResponse,
+  type TApiRunJobResponse,
+  type TApiSetJobSchedulePausedResponse,
+  type TApiStartJobResponse,
+  type TApiTemplate,
+  type TApiTriggerJobScheduleResponse,
+  type TApiUpdateJobScheduleResponse,
 } from "./proto/tyto/runtime/v1/tapi.js";
 import { GuestServiceClient } from "./proto/tyto/runtime/v1/guest.js";
+import {
+  jobRunDetailFromProto,
+  jobRunFromProto,
+  jobScheduleFromProto,
+  jobSpecToProto,
+  scheduleSpecToProto,
+  type JobRun,
+  type JobRunDetail,
+  type JobSchedule,
+  type JobSpec,
+  type ScheduleSpec,
+} from "./jobs.js";
 
 /**
  * gRPC metadata carrier for org context. The REST surface names the same
@@ -72,6 +99,19 @@ export interface TapiStub {
   deletePreview: UnaryMethod<unknown, unknown>;
   listPreviews: UnaryMethod<unknown, unknown>;
   listOrganizations: UnaryMethod<unknown, TApiListOrganizationsResponse>;
+  listTemplates: UnaryMethod<unknown, TApiListTemplatesResponse>;
+  runJob: UnaryMethod<unknown, TApiRunJobResponse>;
+  startJob: UnaryMethod<unknown, TApiStartJobResponse>;
+  getJobRun: UnaryMethod<unknown, TApiGetJobRunResponse>;
+  listJobRuns: UnaryMethod<unknown, TApiListJobRunsResponse>;
+  cancelJobRun: UnaryMethod<unknown, TApiCancelJobRunResponse>;
+  createJobSchedule: UnaryMethod<unknown, TApiCreateJobScheduleResponse>;
+  getJobSchedule: UnaryMethod<unknown, TApiGetJobScheduleResponse>;
+  listJobSchedules: UnaryMethod<unknown, TApiListJobSchedulesResponse>;
+  updateJobSchedule: UnaryMethod<unknown, TApiUpdateJobScheduleResponse>;
+  setJobSchedulePaused: UnaryMethod<unknown, TApiSetJobSchedulePausedResponse>;
+  triggerJobSchedule: UnaryMethod<unknown, TApiTriggerJobScheduleResponse>;
+  deleteJobSchedule: UnaryMethod<unknown, TApiDeleteJobScheduleResponse>;
 }
 
 const TAPI_METHOD_NAMES = [
@@ -87,6 +127,19 @@ const TAPI_METHOD_NAMES = [
   "deletePreview",
   "listPreviews",
   "listOrganizations",
+  "listTemplates",
+  "runJob",
+  "startJob",
+  "getJobRun",
+  "listJobRuns",
+  "cancelJobRun",
+  "createJobSchedule",
+  "getJobSchedule",
+  "listJobSchedules",
+  "updateJobSchedule",
+  "setJobSchedulePaused",
+  "triggerJobSchedule",
+  "deleteJobSchedule",
 ] as const;
 
 /**
@@ -191,8 +244,6 @@ export class Tyto {
   /** @internal */ _tapiStubFactory: TapiStubFactory;
   /** @internal */ _guestStubFactory: GuestStubFactory | undefined;
 
-  readonly sandboxes: SandboxCollection;
-
   constructor(options: TytoOptions = {}) {
     const apiKey = options.apiKey ?? process.env["BONYA_API_KEY"];
     if (!apiKey) {
@@ -230,8 +281,6 @@ export class Tyto {
       options._tapiStubFactory ??
       ((channel) => clientFromPooledChannel(TApiServiceClient, channel as never, this._credentials));
     this._guestStubFactory = options._guestStubFactory;
-
-    this.sandboxes = new SandboxCollection(this);
   }
 
   close(): void {
@@ -282,71 +331,723 @@ export class Tyto {
     }
   }
 
-  // Flat, client-level sandbox methods -- client.createSandbox(...)
-  // alongside client.sandboxes.create(...). Both spellings exist and both
-  // stay: some callers read better with the namespace (grouping every
-  // sandbox operation under one property is what makes sandbox.files and
-  // sandbox.sessions discoverable next to it), others read better as a verb
-  // straight off the client. Every method here is a thin, no-behavior
-  // delegation to the SandboxCollection method of the same operation, so
-  // there is exactly one implementation to keep correct.
-  //
-  // This flattening stops at the client. sandbox.files, sandbox.sessions,
-  // and sandbox.previews keep their namespaces.
-
-  /** sandboxes.create(). */
-  createSandbox(options: CreateSandboxOptions): Promise<Sandbox> {
-    return this.sandboxes.create(options);
+  /**
+   * Lists the deployment's template catalog: every templateId/version
+   * createSandbox and runJob will accept, and which version each templateId
+   * resolves to when a caller omits version. Same catalog for every caller;
+   * not paginated.
+   */
+  async listTemplates(): Promise<Template[]> {
+    const request = { apiKey: this._apiKey };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        const response = await callUnary(this._tapiStub().listTemplates, request, new grpc.Metadata(), deadline);
+        return (response.templates ?? []).map(templateFromProto);
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets() });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
   }
 
-  /** sandboxes.get(). */
-  getSandbox(sandboxId: string): Promise<Sandbox> {
-    return this.sandboxes.get(sandboxId);
+  // Jobs: a managed run of a command or script, on a new or existing
+  // sandbox. Client-level only, like listOrganizations -- a job is not
+  // scoped to a sandbox handle the way sessions/previews/snapshots are, so
+  // there is no sandbox.jobs namespace to also offer.
+
+  /**
+   * Runs a job and blocks until it finishes, bounded by the client's own
+   * timeout. Use startJob() instead for a job that may outlive one call.
+   */
+  async runJob(spec: JobSpec, options: { idempotencyKey?: string } = {}): Promise<JobRun> {
+    const key = options.idempotencyKey ?? randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+    const request = { apiKey: this._apiKey, idempotencyKey: key, spec: jobSpecToProto(spec) };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        const response = await callUnary(this._tapiStub().runJob, request, new grpc.Metadata(), deadline);
+        const run = response.run as TApiJobRun | undefined;
+        if (!run) {
+          throw new InvalidRequestError("RunJob response is missing run", { idempotencyKey: key });
+        }
+        return jobRunFromProto(run);
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets(key), idempotencyKey: key, jobRpc: true });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
   }
 
-  /** sandboxes.getByName(). */
-  getSandboxByName(name: string): Promise<Sandbox> {
-    return this.sandboxes.getByName(name);
+  /**
+   * Starts a job durably and returns immediately with its run id, without
+   * waiting for it to finish. Use getJobRun() to poll for the result.
+   */
+  async startJob(
+    spec: JobSpec,
+    options: { idempotencyKey?: string } = {},
+  ): Promise<{ runId: string; alreadyRunning: boolean }> {
+    const key = options.idempotencyKey ?? randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+    const request = { apiKey: this._apiKey, idempotencyKey: key, spec: jobSpecToProto(spec) };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        const response = await callUnary(this._tapiStub().startJob, request, new grpc.Metadata(), deadline);
+        return { runId: response.runId ?? "", alreadyRunning: response.alreadyRunning ?? false };
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets(key), idempotencyKey: key, jobRpc: true });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
   }
 
-  /** sandboxes.list(). */
+  /** Fetches a job run's full detail, including its stored spec and activity timeline. */
+  async getJobRun(runId: string): Promise<JobRunDetail> {
+    if (!runId) {
+      throw new InvalidRequestError("run_id is required");
+    }
+    const request = { apiKey: this._apiKey, runId };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        const response = await callUnary(this._tapiStub().getJobRun, request, new grpc.Metadata(), deadline);
+        if (!response.detail) {
+          throw new InvalidRequestError("GetJobRun response is missing detail");
+        }
+        return jobRunDetailFromProto(response.detail);
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets(), jobRpc: true });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
+  }
+
+  /**
+   * Lists job runs lazily, newest first, paging as the returned async
+   * iterator is consumed. `limit: 0` yields nothing without an RPC.
+   */
+  listJobRuns(
+    options: { sandboxId?: string; scheduleId?: string; limit?: number } = {},
+  ): AsyncIterableIterator<JobRun> {
+    const limit = options.limit;
+    if (limit !== undefined && (!Number.isInteger(limit) || limit < 0)) {
+      throw new InvalidRequestError("limit must be a non-negative integer");
+    }
+    if (limit === 0) {
+      return (async function* empty() {
+        // yields nothing
+      })();
+    }
+    return this.listJobRunPages(options.sandboxId ?? "", options.scheduleId ?? "", limit);
+  }
+
+  private async *listJobRunPages(
+    sandboxId: string,
+    scheduleId: string,
+    limit: number | undefined,
+  ): AsyncIterableIterator<JobRun> {
+    let yielded = 0;
+    let pageToken = "";
+    for (;;) {
+      const pageSize = limit === undefined ? 0 : Math.min(100, limit - yielded);
+      const request = { apiKey: this._apiKey, sandboxId, scheduleId, pageSize, pageToken };
+      const deadline = Deadline.start(this._timeout);
+      let attempts = 0;
+      let backoff = 0.05;
+      let response: TApiListJobRunsResponse;
+      for (;;) {
+        try {
+          response = await callUnary(this._tapiStub().listJobRuns, request, new grpc.Metadata(), deadline);
+          break;
+        } catch (exc) {
+          if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+            throw mapRpcError(exc, { secrets: this._secrets(pageToken), jobRpc: true });
+          }
+          attempts += 1;
+          await sleepWithDeadline(backoff, deadline);
+          backoff = Math.min(backoff * 2, 0.5);
+        }
+      }
+      for (const run of response.runs ?? []) {
+        if (limit !== undefined && yielded >= limit) {
+          return;
+        }
+        yield jobRunFromProto(run);
+        yielded += 1;
+      }
+      pageToken = response.nextPageToken ?? "";
+      if (!pageToken || (limit !== undefined && yielded >= limit)) {
+        return;
+      }
+    }
+  }
+
+  /**
+   * Requests cancellation of a running job. This cancels rather than
+   * terminates, so the run's own cleanup (e.g. deleting a sandbox it
+   * created) still executes.
+   */
+  async cancelJobRun(runId: string): Promise<void> {
+    if (!runId) {
+      throw new InvalidRequestError("run_id is required");
+    }
+    const request = { apiKey: this._apiKey, runId };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        await callUnary(this._tapiStub().cancelJobRun, request, new grpc.Metadata(), deadline);
+        return;
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets(), jobRpc: true });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
+  }
+
+  /**
+   * Creates a durable cron, interval, or one-shot trigger for a job.
+   * Exactly one of schedule.cronExpressions, intervalSeconds, and
+   * runAtUnixNanos is required.
+   */
+  async createJobSchedule(
+    schedule: ScheduleSpec,
+    job: JobSpec,
+    options: { idempotencyKey?: string } = {},
+  ): Promise<JobSchedule> {
+    const key = options.idempotencyKey ?? randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+    const request = {
+      apiKey: this._apiKey,
+      idempotencyKey: key,
+      schedule: scheduleSpecToProto(schedule),
+      spec: jobSpecToProto(job),
+    };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        const response = await callUnary(this._tapiStub().createJobSchedule, request, new grpc.Metadata(), deadline);
+        if (!response.schedule) {
+          throw new InvalidRequestError("CreateJobSchedule response is missing schedule", { idempotencyKey: key });
+        }
+        return jobScheduleFromProto(response.schedule);
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets(key), idempotencyKey: key, jobScheduleRpc: true });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
+  }
+
+  /** Fetches a job schedule by id. */
+  async getJobSchedule(scheduleId: string): Promise<JobSchedule> {
+    if (!scheduleId) {
+      throw new InvalidRequestError("schedule_id is required");
+    }
+    const request = { apiKey: this._apiKey, scheduleId };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        const response = await callUnary(this._tapiStub().getJobSchedule, request, new grpc.Metadata(), deadline);
+        if (!response.schedule) {
+          throw new InvalidRequestError("GetJobSchedule response is missing schedule");
+        }
+        return jobScheduleFromProto(response.schedule);
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets(), jobScheduleRpc: true });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
+  }
+
+  /**
+   * Lists job schedules lazily, paging as the returned async iterator is
+   * consumed. `limit: 0` yields nothing without an RPC.
+   */
+  listJobSchedules(options: { limit?: number } = {}): AsyncIterableIterator<JobSchedule> {
+    const limit = options.limit;
+    if (limit !== undefined && (!Number.isInteger(limit) || limit < 0)) {
+      throw new InvalidRequestError("limit must be a non-negative integer");
+    }
+    if (limit === 0) {
+      return (async function* empty() {
+        // yields nothing
+      })();
+    }
+    return this.listJobSchedulePages(limit);
+  }
+
+  private async *listJobSchedulePages(limit: number | undefined): AsyncIterableIterator<JobSchedule> {
+    let yielded = 0;
+    let pageToken = "";
+    for (;;) {
+      const pageSize = limit === undefined ? 0 : Math.min(100, limit - yielded);
+      const request = { apiKey: this._apiKey, pageSize, pageToken };
+      const deadline = Deadline.start(this._timeout);
+      let attempts = 0;
+      let backoff = 0.05;
+      let response: TApiListJobSchedulesResponse;
+      for (;;) {
+        try {
+          response = await callUnary(this._tapiStub().listJobSchedules, request, new grpc.Metadata(), deadline);
+          break;
+        } catch (exc) {
+          if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+            throw mapRpcError(exc, { secrets: this._secrets(pageToken), jobScheduleRpc: true });
+          }
+          attempts += 1;
+          await sleepWithDeadline(backoff, deadline);
+          backoff = Math.min(backoff * 2, 0.5);
+        }
+      }
+      for (const schedule of response.schedules ?? []) {
+        if (limit !== undefined && yielded >= limit) {
+          return;
+        }
+        yield jobScheduleFromProto(schedule);
+        yielded += 1;
+      }
+      pageToken = response.nextPageToken ?? "";
+      if (!pageToken || (limit !== undefined && yielded >= limit)) {
+        return;
+      }
+    }
+  }
+
+  /**
+   * Replaces a job schedule's timing and job spec. Replaces the whole
+   * schedule, so pass every field you want to keep, not just the one
+   * you're changing.
+   */
+  async updateJobSchedule(scheduleId: string, schedule: ScheduleSpec, job: JobSpec): Promise<JobSchedule> {
+    if (!scheduleId) {
+      throw new InvalidRequestError("schedule_id is required");
+    }
+    const request = {
+      apiKey: this._apiKey,
+      scheduleId,
+      schedule: scheduleSpecToProto(schedule),
+      spec: jobSpecToProto(job),
+    };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        const response = await callUnary(this._tapiStub().updateJobSchedule, request, new grpc.Metadata(), deadline);
+        if (!response.schedule) {
+          throw new InvalidRequestError("UpdateJobSchedule response is missing schedule");
+        }
+        return jobScheduleFromProto(response.schedule);
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets(), jobScheduleRpc: true });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
+  }
+
+  /** Pauses or resumes a job schedule, optionally recording a note. */
+  async setJobSchedulePaused(scheduleId: string, paused: boolean, options: { note?: string } = {}): Promise<JobSchedule> {
+    if (!scheduleId) {
+      throw new InvalidRequestError("schedule_id is required");
+    }
+    const request = { apiKey: this._apiKey, scheduleId, paused, note: options.note ?? "" };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        const response = await callUnary(this._tapiStub().setJobSchedulePaused, request, new grpc.Metadata(), deadline);
+        if (!response.schedule) {
+          throw new InvalidRequestError("SetJobSchedulePaused response is missing schedule");
+        }
+        return jobScheduleFromProto(response.schedule);
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets(), jobScheduleRpc: true });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
+  }
+
+  /** Fires one run of a job schedule immediately, overriding the schedule's own timing. */
+  async triggerJobSchedule(scheduleId: string): Promise<void> {
+    if (!scheduleId) {
+      throw new InvalidRequestError("schedule_id is required");
+    }
+    const request = { apiKey: this._apiKey, scheduleId };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        await callUnary(this._tapiStub().triggerJobSchedule, request, new grpc.Metadata(), deadline);
+        return;
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets(), jobScheduleRpc: true });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
+  }
+
+  /** Permanently deletes a job schedule. Does not cancel any run currently in flight. */
+  async deleteJobSchedule(scheduleId: string): Promise<void> {
+    if (!scheduleId) {
+      throw new InvalidRequestError("schedule_id is required");
+    }
+    const request = { apiKey: this._apiKey, scheduleId };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        await callUnary(this._tapiStub().deleteJobSchedule, request, new grpc.Metadata(), deadline);
+        return;
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets(), jobScheduleRpc: true });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
+  }
+
+  // Flat sandbox CRUD methods, directly on Tyto -- there is no separate
+  // collection/namespace object; this is the only implementation of each
+  // operation.
+
+  /**
+   * Starts a new sandbox from a template. template may be omitted to use
+   * the deployment's configured default template, if it has one; the
+   * server rejects the request if it does not.
+   */
+  async createSandbox(options: CreateSandboxOptions): Promise<Sandbox> {
+    const { template, version, wait, idempotencyKey, name } = options;
+    const waitValue = normalizeWait(wait ?? Wait.READY);
+    const key = idempotencyKey ?? randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+
+    const request = {
+      apiKey: this._apiKey,
+      idempotencyKey: key,
+      template: { templateId: template ?? "", version: version ?? "", digest: "" },
+      wait: waitValue === Wait.READY ? CreateWait.CREATE_WAIT_READY : CreateWait.CREATE_WAIT_NONE,
+      network: undefined,
+      name: name ?? "",
+    };
+
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        const response = await callUnary(this._tapiStub().create, request, new grpc.Metadata(), deadline);
+        return sandboxFromCreate(this, response, waitValue, key);
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          if (exc instanceof TimeoutError) {
+            throw new SandboxCreationTimeoutError(exc.message, { idempotencyKey: key });
+          }
+          throw mapRpcError(exc, { secrets: this._secrets(key), idempotencyKey: key, create: true });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
+  }
+
+  /** Reconnects to an existing sandbox by id. */
+  async getSandbox(sandboxId: string): Promise<Sandbox> {
+    if (!sandboxId) {
+      throw new InvalidRequestError("sandbox_id is required");
+    }
+    const request = { apiKey: this._apiKey, sandboxId };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        const response = await callUnary(this._tapiStub().getSandbox, request, new grpc.Metadata(), deadline);
+        return sandboxFromGet(this, response, sandboxId);
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets(), sandboxId });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
+  }
+
+  /**
+   * Reconnects to an existing sandbox by name.
+   *
+   * Names are not unique. This resolves the name to a single sandbox and then
+   * fetches it by id, and rejects rather than guessing when the name matches
+   * more than one: picking one silently would let a later delete destroy an
+   * arbitrary sandbox.
+   */
+  async getSandboxByName(name: string): Promise<Sandbox> {
+    if (!name) {
+      throw new InvalidRequestError("name is required");
+    }
+    // Two is enough to tell "one match" from "more than one" without paging
+    // the whole organization.
+    const matches: SandboxSummary[] = [];
+    for await (const summary of this.listSandboxes({ name, limit: 2 })) {
+      matches.push(summary);
+    }
+    const [first, second] = matches;
+    if (first === undefined) {
+      throw new SandboxNotFoundError(`no sandbox is named ${name}`);
+    }
+    if (second !== undefined) {
+      throw new InvalidRequestError(
+        `more than one sandbox is named ${name}, including ${first.id} and ${second.id}; ` +
+          "use getSandbox() with a sandbox id",
+      );
+    }
+    return this.getSandbox(first.id);
+  }
+
+  /**
+   * Lists sandboxes lazily, paging as the returned async iterator is
+   * consumed. `limit: 0` yields nothing without an RPC.
+   */
   listSandboxes(options: ListSandboxesOptions = {}): AsyncIterableIterator<SandboxSummary> {
-    return this.sandboxes.list(options);
+    const stateValues = normalizeStateFilters(options.states);
+    const limit = options.limit;
+    if (limit !== undefined) {
+      if (!Number.isInteger(limit) || limit < 0) {
+        throw new InvalidRequestError("limit must be a non-negative integer");
+      }
+    }
+    if (limit === 0) {
+      return (async function* empty() {
+        // yields nothing
+      })();
+    }
+    return this.listSandboxPages(stateValues, limit, options.name ?? "");
+  }
+
+  private async *listSandboxPages(
+    stateValues: number[],
+    limit: number | undefined,
+    name: string,
+  ): AsyncIterableIterator<SandboxSummary> {
+    let yielded = 0;
+    let pageToken = "";
+    for (;;) {
+      const pageSize = limit === undefined ? 0 : Math.min(100, limit - yielded);
+      const request = {
+        apiKey: this._apiKey,
+        states: stateValues,
+        pageSize,
+        pageToken,
+        name,
+      };
+      const deadline = Deadline.start(this._timeout);
+      let attempts = 0;
+      let backoff = 0.05;
+      let response: TApiListSandboxesResponse;
+      for (;;) {
+        try {
+          response = await callUnary(this._tapiStub().listSandboxes, request, new grpc.Metadata(), deadline);
+          break;
+        } catch (exc) {
+          if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+            throw mapRpcError(exc, { secrets: this._secrets(pageToken) });
+          }
+          attempts += 1;
+          await sleepWithDeadline(backoff, deadline);
+          backoff = Math.min(backoff * 2, 0.5);
+        }
+      }
+      for (const sandbox of response.sandboxes ?? []) {
+        if (limit !== undefined && yielded >= limit) {
+          return;
+        }
+        yield summaryFromMetadata(sandbox);
+        yielded += 1;
+      }
+      pageToken = response.nextPageToken ?? "";
+      if (!pageToken || (limit !== undefined && yielded >= limit)) {
+        return;
+      }
+    }
   }
 
   /**
-   * sandboxes.delete(): a single id-only RPC, with no local handle to check
-   * for an already-known deletion. sandbox.delete() is the handle-aware
-   * form, and is what a Sandbox obtained from createSandbox() or
-   * getSandbox() should generally use instead, so that a repeat call is a
-   * local no-op rather than a second RPC.
+   * Deletes a sandbox by id in a single RPC, without first fetching a
+   * handle. Sandbox.delete() is the handle-aware form, and is what a
+   * Sandbox obtained from createSandbox() or getSandbox() should generally
+   * use instead, so that a repeat call is a local no-op rather than a
+   * second RPC. There is no handle here to remember an earlier deletion, so
+   * a second call here always makes a second RPC, and its alreadyDeleted
+   * reports what the server observed rather than what this SDK remembers.
    */
-  deleteSandbox(sandboxId: string): Promise<DeleteResult> {
-    return this.sandboxes.delete(sandboxId);
+  async deleteSandbox(sandboxId: string): Promise<DeleteResult> {
+    if (!sandboxId) {
+      throw new InvalidRequestError("sandbox_id is required");
+    }
+    const request = { apiKey: this._apiKey, sandboxId };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        const response = await callUnary(this._tapiStub().deleteSandbox, request, new grpc.Metadata(), deadline);
+        const typed = response as { sandboxId?: string; alreadyDeleted?: boolean };
+        return {
+          sandboxId: typed.sandboxId || sandboxId,
+          alreadyDeleted: Boolean(typed.alreadyDeleted),
+        };
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, { secrets: this._secrets(), sandboxId });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
   }
 
   /**
-   * sandboxes.resume(): a single id-only RPC, with no local handle to
-   * update afterward. sandbox.resume() is the handle-aware form, and is
-   * what a Sandbox should generally use instead, so that its exec
-   * capability and endpoint are refreshed for the next call rather than
-   * left stale.
+   * Resumes a sandbox by id in a single RPC, without first fetching a
+   * handle. Sandbox.resume() is the handle-aware form, and is what a
+   * Sandbox should generally use instead, so that its exec capability and
+   * endpoint are refreshed for the next call rather than left stale.
    */
-  resumeSandbox(sandboxId: string, options: { idempotencyKey?: string } = {}): Promise<ResumeResult> {
-    return this.sandboxes.resume(sandboxId, options);
+  async resumeSandbox(sandboxId: string, options: { idempotencyKey?: string } = {}): Promise<ResumeResult> {
+    const [result] = await this._resumeSandboxRaw(sandboxId, options);
+    return result;
   }
 
-  // Flat, client-level forms of sandbox.sessions, sandbox.previews, and
-  // sandbox.snapshot(). Unlike the sandbox-collection methods above, each of
-  // these needs a resolved Sandbox to call through -- sessions and previews
-  // are scoped to one sandbox's RPC surface, and snapshot creation checks
-  // the sandbox's last observed status -- so every method here does a
-  // getSandbox() first and then delegates, which costs one extra round trip
-  // compared to already holding the handle. Call sandbox.sessions.create()
-  // (or the equivalent) directly instead when a Sandbox is already in hand,
-  // such as right after createSandbox().
+  /**
+   * The one ResumeSandbox call site. Returns the raw response alongside the
+   * mapped ResumeResult so Sandbox.resume() can read the capability and
+   * exec endpoint fields ResumeResult does not expose, without a second
+   * implementation of the retry loop.
+   *
+   * @internal
+   */
+  async _resumeSandboxRaw(
+    sandboxId: string,
+    options: { idempotencyKey?: string } = {},
+  ): Promise<
+    [
+      ResumeResult,
+      { sandboxId?: string; lifecycleOperationId?: string; alreadyRunning?: boolean; execCapabilityJws?: string; execEndpoint?: string },
+    ]
+  > {
+    if (!sandboxId) {
+      throw new InvalidRequestError("sandbox_id is required");
+    }
+    const key = options.idempotencyKey ?? randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+    const request = { apiKey: this._apiKey, sandboxId, idempotencyKey: key };
+    const deadline = Deadline.start(this._timeout);
+    let attempts = 0;
+    let backoff = 0.05;
+    for (;;) {
+      try {
+        const response = (await callUnary(
+          this._tapiStub().resumeSandbox,
+          request,
+          new grpc.Metadata(),
+          deadline,
+        )) as {
+          sandboxId?: string;
+          lifecycleOperationId?: string;
+          alreadyRunning?: boolean;
+          execCapabilityJws?: string;
+          execEndpoint?: string;
+        };
+        const result: ResumeResult = {
+          sandboxId: response.sandboxId || sandboxId,
+          lifecycleOperationId: response.lifecycleOperationId || "",
+          alreadyRunning: Boolean(response.alreadyRunning),
+        };
+        return [result, response];
+      } catch (exc) {
+        if (!isRetryableTransportError(exc) || attempts >= this._maxRetries) {
+          throw mapRpcError(exc, {
+            secrets: this._secrets(),
+            sandboxId,
+            idempotencyKey: key,
+          });
+        }
+        attempts += 1;
+        await sleepWithDeadline(backoff, deadline);
+        backoff = Math.min(backoff * 2, 0.5);
+      }
+    }
+  }
 
-  /** getSandbox() followed by sandbox.sessions.create(). */
+  // Flat, client-level forms of sandbox.createSession, sandbox.createPreview,
+  // and sandbox.snapshot(). Each of these needs a resolved Sandbox to call
+  // through -- sessions and previews are scoped to one sandbox's RPC
+  // surface, and snapshot creation checks the sandbox's last observed
+  // status -- so every method here does a getSandbox() first and then
+  // delegates, which costs one extra round trip compared to already holding
+  // the handle. Call sandbox.createSession() (or the equivalent) directly
+  // instead when a Sandbox is already in hand, such as right after
+  // createSandbox().
+
+  /** getSandbox() followed by sandbox.createSession(). */
   async createSession(
     sandboxId: string,
     name: string,
@@ -354,47 +1055,47 @@ export class Tyto {
     options: CreateSessionOptions = {},
   ): Promise<SessionInfo> {
     const sandbox = await this.getSandbox(sandboxId);
-    return sandbox.sessions.create(name, command, options);
+    return sandbox.createSession(name, command, options);
   }
 
-  /** getSandbox() followed by sandbox.sessions.list(). */
+  /** getSandbox() followed by sandbox.listSessions(). */
   async listSessions(sandboxId: string): Promise<SessionList> {
     const sandbox = await this.getSandbox(sandboxId);
-    return sandbox.sessions.list();
+    return sandbox.listSessions();
   }
 
-  /** getSandbox() followed by sandbox.sessions.kill(). */
+  /** getSandbox() followed by sandbox.killSession(). */
   async killSession(
     sandboxId: string,
     name: string,
     options: { signal?: string; graceMs?: number } = {},
   ): Promise<SessionInfo> {
     const sandbox = await this.getSandbox(sandboxId);
-    return sandbox.sessions.kill(name, options);
+    return sandbox.killSession(name, options);
   }
 
-  /** getSandbox() followed by sandbox.sessions.attach(). */
+  /** getSandbox() followed by sandbox.attachSession(). */
   async attachSession(sandboxId: string, name: string, options: AttachSessionOptions = {}): Promise<SessionStream> {
     const sandbox = await this.getSandbox(sandboxId);
-    return sandbox.sessions.attach(name, options);
+    return sandbox.attachSession(name, options);
   }
 
-  /** getSandbox() followed by sandbox.previews.create(). */
+  /** getSandbox() followed by sandbox.createPreview(). */
   async createPreview(sandboxId: string, port: number, options: CreatePreviewOptions = {}): Promise<Preview> {
     const sandbox = await this.getSandbox(sandboxId);
-    return sandbox.previews.create(port, options);
+    return sandbox.createPreview(port, options);
   }
 
-  /** getSandbox() followed by sandbox.previews.list(). */
+  /** getSandbox() followed by sandbox.listPreviews(). */
   async listPreviews(sandboxId: string): Promise<Preview[]> {
     const sandbox = await this.getSandbox(sandboxId);
-    return sandbox.previews.list();
+    return sandbox.listPreviews();
   }
 
-  /** getSandbox() followed by sandbox.previews.delete(). */
+  /** getSandbox() followed by sandbox.deletePreview(). */
   async deletePreview(sandboxId: string, previewId: string): Promise<void> {
     const sandbox = await this.getSandbox(sandboxId);
-    return sandbox.previews.delete(previewId);
+    return sandbox.deletePreview(previewId);
   }
 
   /** getSandbox() followed by sandbox.snapshot(). */
@@ -481,6 +1182,57 @@ export interface Organization {
   readonly createdAt: Date;
 }
 
+/** One language or runtime toolchain preinstalled in a Template. */
+export interface TemplateStack {
+  readonly name: string;
+  readonly version: string;
+}
+
+/**
+ * The operating system and tools preinstalled in a Template. A catalog
+ * entry without annotations yields its zero value.
+ */
+export interface TemplateMetadata {
+  readonly description: string;
+  readonly os: string;
+  readonly osVersion: string;
+  readonly stacks: readonly TemplateStack[];
+  readonly agentCliSupport: readonly string[];
+}
+
+/**
+ * One templateId/version binding the deployment's catalog offers to
+ * createSandbox and runJob.
+ *
+ * One entry per version, not one per templateId: a templateId with several
+ * published versions appears once per version, and isDefault marks the one
+ * a caller resolving by templateId alone (version omitted) gets.
+ */
+export interface Template {
+  readonly id: string;
+  readonly version: string;
+  readonly digest: string;
+  readonly isDefault: boolean;
+  readonly metadata: TemplateMetadata;
+}
+
+function templateFromProto(template: TApiTemplate): Template {
+  const metadata = template.metadata;
+  return {
+    id: template.templateId ?? "",
+    version: template.version ?? "",
+    digest: template.digest ?? "",
+    isDefault: template.isDefault ?? false,
+    metadata: {
+      description: metadata?.description ?? "",
+      os: metadata?.os ?? "",
+      osVersion: metadata?.osVersion ?? "",
+      stacks: (metadata?.stacks ?? []).map((s) => ({ name: s.name ?? "", version: s.version ?? "" })),
+      agentCliSupport: metadata?.agentCliSupport ?? [],
+    },
+  };
+}
+
 function organizationFromProto(organization: TApiOrganization): Organization {
   const created = Number(organization.createdAtUnixNanos ?? 0);
   return {
@@ -493,7 +1245,11 @@ function organizationFromProto(organization: TApiOrganization): Organization {
 }
 
 export interface CreateSandboxOptions {
-  template: string;
+  /**
+   * May be omitted to use the deployment's configured default template, if
+   * it has one; the server rejects the request if it does not.
+   */
+  template?: string;
   version?: string;
   wait?: WaitInput;
   idempotencyKey?: string;
@@ -513,279 +1269,6 @@ export interface ListSandboxesOptions {
    * this can still match more than one.
    */
   name?: string;
-}
-
-export class SandboxCollection {
-  private readonly client: Tyto;
-
-  constructor(client: Tyto) {
-    this.client = client;
-  }
-
-  async create(options: CreateSandboxOptions): Promise<Sandbox> {
-    const { template, version, wait, idempotencyKey, name } = options;
-    if (!template) {
-      throw new InvalidRequestError("template is required");
-    }
-    const waitValue = normalizeWait(wait ?? Wait.READY);
-    const key = idempotencyKey ?? randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
-
-    const request = {
-      apiKey: this.client._apiKey,
-      idempotencyKey: key,
-      template: { templateId: template, version: version ?? "", digest: "" },
-      wait: waitValue === Wait.READY ? CreateWait.CREATE_WAIT_READY : CreateWait.CREATE_WAIT_NONE,
-      network: undefined,
-      name: name ?? "",
-    };
-
-    const deadline = Deadline.start(this.client._timeout);
-    let attempts = 0;
-    let backoff = 0.05;
-    for (;;) {
-      try {
-        const response = await callUnary(this.client._tapiStub().create, request, new grpc.Metadata(), deadline);
-        return sandboxFromCreate(this.client, response, waitValue, key);
-      } catch (exc) {
-        if (!isRetryableTransportError(exc) || attempts >= this.client._maxRetries) {
-          if (exc instanceof TimeoutError) {
-            throw new SandboxCreationTimeoutError(exc.message, { idempotencyKey: key });
-          }
-          throw mapRpcError(exc, { secrets: this.client._secrets(key), idempotencyKey: key, create: true });
-        }
-        attempts += 1;
-        await sleepWithDeadline(backoff, deadline);
-        backoff = Math.min(backoff * 2, 0.5);
-      }
-    }
-  }
-
-  async get(sandboxId: string): Promise<Sandbox> {
-    if (!sandboxId) {
-      throw new InvalidRequestError("sandbox_id is required");
-    }
-    const request = { apiKey: this.client._apiKey, sandboxId };
-    const deadline = Deadline.start(this.client._timeout);
-    let attempts = 0;
-    let backoff = 0.05;
-    for (;;) {
-      try {
-        const response = await callUnary(this.client._tapiStub().getSandbox, request, new grpc.Metadata(), deadline);
-        return sandboxFromGet(this.client, response, sandboxId);
-      } catch (exc) {
-        if (!isRetryableTransportError(exc) || attempts >= this.client._maxRetries) {
-          throw mapRpcError(exc, { secrets: this.client._secrets(), sandboxId });
-        }
-        attempts += 1;
-        await sleepWithDeadline(backoff, deadline);
-        backoff = Math.min(backoff * 2, 0.5);
-      }
-    }
-  }
-
-  /**
-   * Lists sandboxes lazily, paging as the returned async iterator is
-   * consumed. `limit: 0` yields nothing without an RPC.
-   */
-  list(options: ListSandboxesOptions = {}): AsyncIterableIterator<SandboxSummary> {
-    const stateValues = normalizeStateFilters(options.states);
-    const limit = options.limit;
-    if (limit !== undefined) {
-      if (!Number.isInteger(limit) || limit < 0) {
-        throw new InvalidRequestError("limit must be a non-negative integer");
-      }
-    }
-    if (limit === 0) {
-      return (async function* empty() {
-        // yields nothing
-      })();
-    }
-    return this.listPages(stateValues, limit, options.name ?? "");
-  }
-
-  /**
-   * Reconnects to an existing sandbox by name.
-   *
-   * Names are not unique. This resolves the name to a single sandbox and then
-   * fetches it by id, and rejects rather than guessing when the name matches
-   * more than one: picking one silently would let a later delete destroy an
-   * arbitrary sandbox.
-   */
-  async getByName(name: string): Promise<Sandbox> {
-    if (!name) {
-      throw new InvalidRequestError("name is required");
-    }
-    // Two is enough to tell "one match" from "more than one" without paging
-    // the whole organization.
-    const matches: SandboxSummary[] = [];
-    for await (const summary of this.list({ name, limit: 2 })) {
-      matches.push(summary);
-    }
-    const [first, second] = matches;
-    if (first === undefined) {
-      throw new SandboxNotFoundError(`no sandbox is named ${name}`);
-    }
-    if (second !== undefined) {
-      throw new InvalidRequestError(
-        `more than one sandbox is named ${name}, including ${first.id} and ${second.id}; ` +
-          "use get() with a sandbox id",
-      );
-    }
-    return this.get(first.id);
-  }
-
-  /**
-   * Deletes a sandbox by id in a single RPC, without first fetching a
-   * handle. Backs the flat Tyto.deleteSandbox; Sandbox.delete() also calls
-   * through to this and additionally short-circuits locally when called
-   * twice on the same handle -- there is no handle here to remember that,
-   * so a second call here always makes a second RPC, and its
-   * alreadyDeleted reports what the server observed rather than what this
-   * SDK remembers.
-   */
-  async delete(sandboxId: string): Promise<DeleteResult> {
-    if (!sandboxId) {
-      throw new InvalidRequestError("sandbox_id is required");
-    }
-    const request = { apiKey: this.client._apiKey, sandboxId };
-    const deadline = Deadline.start(this.client._timeout);
-    let attempts = 0;
-    let backoff = 0.05;
-    for (;;) {
-      try {
-        const response = await callUnary(this.client._tapiStub().deleteSandbox, request, new grpc.Metadata(), deadline);
-        const typed = response as { sandboxId?: string; alreadyDeleted?: boolean };
-        return {
-          sandboxId: typed.sandboxId || sandboxId,
-          alreadyDeleted: Boolean(typed.alreadyDeleted),
-        };
-      } catch (exc) {
-        if (!isRetryableTransportError(exc) || attempts >= this.client._maxRetries) {
-          throw mapRpcError(exc, { secrets: this.client._secrets(), sandboxId });
-        }
-        attempts += 1;
-        await sleepWithDeadline(backoff, deadline);
-        backoff = Math.min(backoff * 2, 0.5);
-      }
-    }
-  }
-
-  /**
-   * Resumes a sandbox by id in a single RPC, without first fetching a
-   * handle. Backs the flat Tyto.resumeSandbox; Sandbox.resume() also calls
-   * through to the same RPC via resumeRaw(), additionally copying the
-   * refreshed capability and exec endpoint onto its own handle, since only
-   * a handle has those to update -- ResumeResult itself never carries them.
-   */
-  async resume(sandboxId: string, options: { idempotencyKey?: string } = {}): Promise<ResumeResult> {
-    const [result] = await this.resumeRaw(sandboxId, options);
-    return result;
-  }
-
-  /**
-   * The one ResumeSandbox call site. Returns the raw response alongside the
-   * mapped ResumeResult so Sandbox.resume() can read the capability and
-   * exec endpoint fields ResumeResult does not expose, without a second
-   * implementation of the retry loop.
-   */
-  async resumeRaw(
-    sandboxId: string,
-    options: { idempotencyKey?: string } = {},
-  ): Promise<
-    [
-      ResumeResult,
-      { sandboxId?: string; lifecycleOperationId?: string; alreadyRunning?: boolean; execCapabilityJws?: string; execEndpoint?: string },
-    ]
-  > {
-    if (!sandboxId) {
-      throw new InvalidRequestError("sandbox_id is required");
-    }
-    const key = options.idempotencyKey ?? randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
-    const request = { apiKey: this.client._apiKey, sandboxId, idempotencyKey: key };
-    const deadline = Deadline.start(this.client._timeout);
-    let attempts = 0;
-    let backoff = 0.05;
-    for (;;) {
-      try {
-        const response = (await callUnary(
-          this.client._tapiStub().resumeSandbox,
-          request,
-          new grpc.Metadata(),
-          deadline,
-        )) as {
-          sandboxId?: string;
-          lifecycleOperationId?: string;
-          alreadyRunning?: boolean;
-          execCapabilityJws?: string;
-          execEndpoint?: string;
-        };
-        const result: ResumeResult = {
-          sandboxId: response.sandboxId || sandboxId,
-          lifecycleOperationId: response.lifecycleOperationId || "",
-          alreadyRunning: Boolean(response.alreadyRunning),
-        };
-        return [result, response];
-      } catch (exc) {
-        if (!isRetryableTransportError(exc) || attempts >= this.client._maxRetries) {
-          throw mapRpcError(exc, {
-            secrets: this.client._secrets(),
-            sandboxId,
-            idempotencyKey: key,
-          });
-        }
-        attempts += 1;
-        await sleepWithDeadline(backoff, deadline);
-        backoff = Math.min(backoff * 2, 0.5);
-      }
-    }
-  }
-
-  private async *listPages(
-    stateValues: number[],
-    limit: number | undefined,
-    name: string,
-  ): AsyncIterableIterator<SandboxSummary> {
-    let yielded = 0;
-    let pageToken = "";
-    for (;;) {
-      const pageSize = limit === undefined ? 0 : Math.min(100, limit - yielded);
-      const request = {
-        apiKey: this.client._apiKey,
-        states: stateValues,
-        pageSize,
-        pageToken,
-        name,
-      };
-      const deadline = Deadline.start(this.client._timeout);
-      let attempts = 0;
-      let backoff = 0.05;
-      let response: TApiListSandboxesResponse;
-      for (;;) {
-        try {
-          response = await callUnary(this.client._tapiStub().listSandboxes, request, new grpc.Metadata(), deadline);
-          break;
-        } catch (exc) {
-          if (!isRetryableTransportError(exc) || attempts >= this.client._maxRetries) {
-            throw mapRpcError(exc, { secrets: this.client._secrets(pageToken) });
-          }
-          attempts += 1;
-          await sleepWithDeadline(backoff, deadline);
-          backoff = Math.min(backoff * 2, 0.5);
-        }
-      }
-      for (const sandbox of response.sandboxes ?? []) {
-        if (limit !== undefined && yielded >= limit) {
-          return;
-        }
-        yield summaryFromMetadata(sandbox);
-        yielded += 1;
-      }
-      pageToken = response.nextPageToken ?? "";
-      if (!pageToken || (limit !== undefined && yielded >= limit)) {
-        return;
-      }
-    }
-  }
 }
 
 function resolveOrganizationId(organizationId: string | undefined): string | undefined {

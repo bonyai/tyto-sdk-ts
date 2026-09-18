@@ -8,6 +8,8 @@ import {
   FilesystemError,
   FilesystemLimitError,
   InvalidRequestError,
+  JobRunNotFoundError,
+  JobScheduleNotFoundError,
   RemoteFileExistsError,
   RemoteFileNotFoundError,
   SandboxBusyError,
@@ -60,6 +62,8 @@ export interface MapRpcErrorOptions {
   execRpc?: boolean;
   filesystemRpc?: boolean;
   sessionRpc?: boolean;
+  jobRpc?: boolean;
+  jobScheduleRpc?: boolean;
 }
 
 /**
@@ -71,7 +75,8 @@ export function mapRpcError(error: unknown, options: MapRpcErrorOptions = {}): T
     return error;
   }
   const secrets = options.secrets ?? [];
-  const { sandboxId, operationId, idempotencyKey, create, execRpc, filesystemRpc, sessionRpc } = options;
+  const { sandboxId, operationId, idempotencyKey, create, execRpc, filesystemRpc, sessionRpc, jobRpc, jobScheduleRpc } =
+    options;
 
   if (!isGrpcServiceError(error)) {
     return new ServiceError(sanitizeMessage(error instanceof Error ? error.message : error, secrets), {
@@ -108,6 +113,12 @@ export function mapRpcError(error: unknown, options: MapRpcErrorOptions = {}): T
   }
   if (code === grpc.status.NOT_FOUND && sessionRpc) {
     return new SessionNotFoundError(details, { sandboxId, operationId });
+  }
+  if (code === grpc.status.NOT_FOUND && jobRpc) {
+    return new JobRunNotFoundError(details, { sandboxId, operationId });
+  }
+  if (code === grpc.status.NOT_FOUND && jobScheduleRpc) {
+    return new JobScheduleNotFoundError(details, { sandboxId, operationId });
   }
   if (code === grpc.status.NOT_FOUND) {
     return new SandboxNotFoundError(details, { sandboxId, operationId });

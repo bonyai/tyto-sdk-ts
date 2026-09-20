@@ -227,7 +227,9 @@ const sandbox = await client.createSandbox({
 
 Options:
 
-- `template: string` is required and must be non-empty.
+- `template?: string` may be omitted to use the deployment's configured
+  default template, if it has one; the server rejects the request if it
+  does not.
 - `version?: string` uses the server's default template version when
   omitted.
 - `wait?: Wait | "ready" | "none"` controls when create resolves. Defaults to
